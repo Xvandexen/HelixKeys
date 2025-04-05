@@ -1,4 +1,4 @@
-package com.github.xvandexen.helixkeys.services
+package com.github.xvandexen.helixkeys.functionaltity
 
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
@@ -20,21 +20,23 @@ class ModeManager(private val project: Project) {
 var currentMode = Mode.NORMAL
     private set
 
-    fun toggleMode(){
-        currentMode= when(currentMode){
-            Mode.NORMAL -> {
+
+
+    fun toggleMode(mode: Mode){
+        currentMode= when(mode){
+            Mode.SPECIAL -> {
                 thisLogger().debug("Switched To Special Mode")
                 Mode.SPECIAL
             }
-            Mode.SPECIAL -> {
+            Mode.NORMAL -> {
                 thisLogger().debug("Switched To Normal Mode")
                 Mode.NORMAL
 
             }
         }
 
-        project.messageBus.syncPublisher(MODE_CHANGE_TOPIC).modeChanged();
+        project.messageBus.syncPublisher(MODE_CHANGE_TOPIC).modeChanged()
     }
 
-    fun isSpecialMode() = currentMode == Mode.SPECIAL
+
 }
