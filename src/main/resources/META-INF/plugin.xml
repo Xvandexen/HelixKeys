@@ -10,6 +10,9 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.xvandexen.helixkeys.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.xvandexen.helixkeys.startup.MyProjectActivity" />
+        <postStartupActivity implementation="com.github.xvandexen.helixkeys.startup.ModeAwareActivity"/>
+
+        <notificationGroup id="Helixkeys Notifications" displayType="BALLOON"/>
+
     </extensions>
 </idea-plugin>
