@@ -22,10 +22,14 @@ kotlin {
 // Configure project's dependencies
 repositories {
     mavenCentral()
+    maven{
+        url = uri("https://jitpack.io")
+    }
 
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
     intellijPlatform {
         defaultRepositories()
+
     }
 }
 
@@ -33,6 +37,7 @@ repositories {
 dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
+    implementation("cc.ekblad:4koma:1.2.0")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {

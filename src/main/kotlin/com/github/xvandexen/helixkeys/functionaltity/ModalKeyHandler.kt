@@ -7,9 +7,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.ide.IdeEventQueue
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.DialogWrapper
 import java.awt.event.KeyEvent
 import java.util.LinkedHashSet
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -17,8 +15,11 @@ import kotlin.concurrent.write
 
 class ModalKeyHandler(
   private val modeManager: ModeManager,
-  private val project: Project
-) : Disposable {
+  private val project: Project,
+  private val keybindings: Map<String, KeybindingConfig.RecKeyBinding>,
+
+
+  ) : Disposable {
   private val logger = thisLogger()
 
   // Map key combinations to action IDs for each mode
