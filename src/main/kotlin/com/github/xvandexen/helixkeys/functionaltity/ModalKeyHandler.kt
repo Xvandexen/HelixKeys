@@ -35,10 +35,18 @@ class ModalKeyHandler(
     // Setup key mappings for each mode
     setupKeyMappings()
 
-    // Add global key event listener
-    IdeEventQueue.getInstance().addPostprocessor({ event ->
+
+    //Listens for and dispatches Keyevents, all other events continue as normal
+    //Does not interupt typed char
+    IdeEventQueue.getInstance().addDispatcher({ event ->
+      if (event is KeyEvent){
       handleEvent(event)
+      } else{
+        false
+      }
+
     }, this)
+
 
     logger.info("ModalKeyHandler initialized, mode: ${modeManager.currentMode}")
   }
@@ -64,9 +72,20 @@ class ModalKeyHandler(
     when (event.id) {
       KeyEvent.KEY_PRESSED -> return handleKeyPressed(event)
       KeyEvent.KEY_RELEASED -> return handleKeyReleased(event)
+      KeyEvent.KEY_TYPED -> return hasKeyBinding(event);
     }
 
     return false
+  }
+
+  private fun hasKeyBinding(event: KeyEvent): Boolean {
+    //TODO(find A better solution for this)
+    val char = event.keyChar
+    logger.info("Char typed : $char")
+    val setChar = setOf(KeyEvent.getExtendedKeyCodeForChar(char.code))
+    logger.info("setChar: $setChar")
+
+    return normalModeKeyMaps.containsKey(setChar) || (specialModeKeyMaps.containsKey(setChar) && modeManager.currentMode == ModeManager.Mode.SPECIAL)
   }
 
   private fun handleKeyPressed(event: KeyEvent): Boolean {
@@ -75,6 +94,7 @@ class ModalKeyHandler(
     keysLock.write {
       // Ignore auto-repeats (when holding a key down)
       if (pressedKeys.contains(keyCode)) {
+
         return@write
       }
 
@@ -86,8 +106,14 @@ class ModalKeyHandler(
     // In SPECIAL mode, always consume the event
     // In NORMAL mode, only consume if we have a mapping for it
     return when {
-      isInSpecialMode() -> true
-      hasNormalModeMapping(keyCode) -> true
+      isInSpecialMode() -> {
+        event.consume()
+        true
+      }
+      hasNormalModeMapping(keyCode) -> {
+        event.consume()
+        true
+      }
       else -> false
     }
   }
