@@ -2,12 +2,14 @@ package com.github.xvandexen.helixkeys.services
 
 import com.github.xvandexen.helixkeys.functionaltity.ModeManager
 import com.github.xvandexen.helixkeys.functionaltity.ModalKeyHandler
+import com.intellij.ide.IdeEventQueue
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.editor.actionSystem.TypedAction
 import com.intellij.openapi.project.Project
+import java.awt.event.KeyEvent
 
 @Service(Service.Level.PROJECT)
 class ModeAwareService(private val project: Project): Disposable {
@@ -19,7 +21,7 @@ class ModeAwareService(private val project: Project): Disposable {
 
         modeManager = ModeManager(project)
 
-        keyHandler = ModalKeyHandler(modeManager,)
+        keyHandler = ModalKeyHandler(modeManager,project)
 
 
 
