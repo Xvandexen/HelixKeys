@@ -1,4 +1,4 @@
-package com.github.xvandexen.helixkeys.functionaltity
+package com.github.xvandexen.helixkeys.configuration
 
 import com.intellij.openapi.diagnostic.thisLogger
 import java.nio.file.Path

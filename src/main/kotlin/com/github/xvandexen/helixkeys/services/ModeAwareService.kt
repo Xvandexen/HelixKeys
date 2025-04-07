@@ -1,8 +1,10 @@
 package com.github.xvandexen.helixkeys.services
 
-import com.github.xvandexen.helixkeys.functionaltity.KeybindingConfig
-import com.github.xvandexen.helixkeys.functionaltity.ModeManager
+import com.github.xvandexen.helixkeys.commands.CommandExecutor
+import com.github.xvandexen.helixkeys.commands.CommandExecutor.HelixCommand.*
+import com.github.xvandexen.helixkeys.configuration.KeybindingConfig
 import com.github.xvandexen.helixkeys.functionaltity.ModalKeyHandler
+import com.github.xvandexen.helixkeys.functionaltity.ModeManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -16,6 +18,12 @@ class ModeAwareService(private val project: Project): Disposable {
 
     init {
         thisLogger().info("[HelixKeys] Initializing ModeAwareService for project: ${project.name}")
+
+
+        val commandExecutor = CommandExecutor()
+        commandExecutor.executeCommand(ENTER_NORMAL_MODE)
+
+
 
         val keybindings: Map<String, KeybindingConfig.RecKeyBinding> = KeybindingConfig().loadConfig()
 

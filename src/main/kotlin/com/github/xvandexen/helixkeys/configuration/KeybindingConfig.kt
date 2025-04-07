@@ -1,7 +1,6 @@
-package com.github.xvandexen.helixkeys.functionaltity
+package com.github.xvandexen.helixkeys.configuration
 
 import cc.ekblad.toml.decode
-import cc.ekblad.toml.model.TomlValue
 import cc.ekblad.toml.tomlMapper
 import com.intellij.openapi.diagnostic.thisLogger
 import java.awt.event.KeyEvent

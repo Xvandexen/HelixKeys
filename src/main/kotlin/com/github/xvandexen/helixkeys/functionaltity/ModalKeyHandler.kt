@@ -1,5 +1,6 @@
 package com.github.xvandexen.helixkeys.functionaltity
 
+import com.github.xvandexen.helixkeys.configuration.KeybindingConfig
 import com.intellij.ide.DataManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
@@ -52,6 +53,7 @@ class ModalKeyHandler(
     logger.info("ModalKeyHandler initialized, mode: ${modeManager.currentMode}")
   }
 
+
   private fun setupKeyMappings() {
     // Normal mode mappings
     normalModeKeyMaps[setOf(KeyEvent.VK_ESCAPE)] = "SwitchToSpecialMode"
@@ -86,7 +88,7 @@ class ModalKeyHandler(
     val setChar = setOf(KeyEvent.getExtendedKeyCodeForChar(char.code))
     logger.info("setChar: $setChar")
 
-    return normalModeKeyMaps.containsKey(setChar) || (specialModeKeyMaps.containsKey(setChar) && modeManager.currentMode == ModeManager.Mode.SPECIAL)
+    return normalModeKeyMaps.containsKey(setChar) || (specialModeKeyMaps.containsKey(setChar) && modeManager.currentMode == ModeManager.Mode.Insert)
   }
 
   private fun handleKeyPressed(event: KeyEvent): Boolean {
@@ -151,7 +153,7 @@ class ModalKeyHandler(
   }
 
   private fun isInSpecialMode(): Boolean {
-    return modeManager.currentMode == ModeManager.Mode.SPECIAL
+    return modeManager.currentMode == ModeManager.Mode.Insert
   }
 
   private fun hasNormalModeMapping(keyCode: Int): Boolean {
@@ -169,7 +171,7 @@ class ModalKeyHandler(
     val currentMode = modeManager.currentMode
     val keyMap = when (currentMode) {
       ModeManager.Mode.NORMAL -> normalModeKeyMaps
-      ModeManager.Mode.SPECIAL -> specialModeKeyMaps
+      ModeManager.Mode.Insert -> specialModeKeyMaps
     }
 
     // Find the action for this key combination
@@ -180,7 +182,7 @@ class ModalKeyHandler(
 
       // Handle special actions
       when (actionId) {
-        "SwitchToSpecialMode" -> modeManager.toggleMode(ModeManager.Mode.SPECIAL)
+        "SwitchToSpecialMode" -> modeManager.toggleMode(ModeManager.Mode.Insert)
         "SwitchToNormalMode" -> modeManager.toggleMode(ModeManager.Mode.NORMAL)
         else -> executeAction(actionId)
       }
