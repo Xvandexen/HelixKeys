@@ -1,41 +1,38 @@
 package com.github.xvandexen.helixkeys.functionaltity
 
+import com.github.xvandexen.helixkeys.ui.UiHandler
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.util.messages.Topic
 
-class ModeManager(private val project: Project) {
-    companion object{
-        val MODE_CHANGE_TOPIC = Topic.create("MODE_CHANGE_TOPIC", ModeChangeListener::class.java)
-    }
-    interface ModeChangeListener{
-        fun modeChanged()
-    }
+object ModeManager{
+
+
 
     enum class Mode{
         NORMAL,
         INSERT
     }
 
-var currentMode = Mode.NORMAL
+    var currentMode = Mode.NORMAL
     private set
-
 
 
     fun toggleMode(mode: Mode){
         currentMode= when(mode){
             Mode.INSERT -> {
                 thisLogger().debug("Switched To Special Mode")
+                UiHandler.switchMode(mode)
                 Mode.INSERT
             }
             Mode.NORMAL -> {
                 thisLogger().debug("Switched To Normal Mode")
+                UiHandler.switchMode(mode)
                 Mode.NORMAL
 
             }
         }
 
-        project.messageBus.syncPublisher(MODE_CHANGE_TOPIC).modeChanged()
     }
 
 

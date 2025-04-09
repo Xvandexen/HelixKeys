@@ -1,5 +1,7 @@
 package com.github.xvandexen.helixkeys.commands
 
+import com.github.xvandexen.helixkeys.functionaltity.ModeManager
+import com.github.xvandexen.helixkeys.functionaltity.ModeManager.Mode.*
 import com.intellij.openapi.diagnostic.thisLogger
 
 object CommandExecutor {
@@ -8,11 +10,12 @@ object CommandExecutor {
 
   enum class HelixCommand(val commandFunction: ( Any?)-> Boolean ) {
     ENTER_NORMAL_MODE({
-
+      ModeManager.toggleMode(NORMAL)
       thisLogger().info("Executing Command: Normal Mode")
       true
     }),
     ENTER_INSERT_MODE({
+      ModeManager.toggleMode(INSERT)
       thisLogger().info("Executing Command: InsertMode")
       true
     }),
@@ -23,7 +26,7 @@ object CommandExecutor {
       true}),
     MOVE_VISUAL_LINE_UP({true}),
     MOVE_VISUAL_LINE_DOWN({true}),
-    MOVE_CHAR_DOWN({true}),;
+    MOVE_CHAR_RIGHT({true}),;
   }
 
 

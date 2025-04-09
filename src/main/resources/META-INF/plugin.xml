@@ -10,7 +10,9 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.github.xvandexen.helixkeys.startup.ModeAwareActivity"/>
-
+        <statusBarWidgetFactory implementation="com.github.xvandexen.helixkeys.ui.HelixKeysStatusBarWidgetFactory"
+                                id="HelixKeys.StatusWidget"
+                                order="first"/>
         <notificationGroup id="Helixkeys Notifications" displayType="BALLOON"/>
 
     </extensions>

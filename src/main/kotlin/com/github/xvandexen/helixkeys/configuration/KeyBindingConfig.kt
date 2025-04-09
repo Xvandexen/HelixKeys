@@ -73,10 +73,23 @@ class KeyBindingConfig() {
   private fun getKeyCodeFromString(key: String): Set<Int> {
     //TODO(Set Up Proper Parsing)
     return buildSet {
-      val pattern = Regex(
-        """(?=C-|A-|S-|\b(?:escape|enter|space|tab|backspace|delete|up|down|left|right)\b|[a-zA-Z])"""
+
+
+
+      val tokenRegex = Regex(
+        // Tokens listed in order: modifiers (like C-), keywords (like escape)
+        // and finally a single letter (matches any A-Z or a-z).
+        """(C-|A-|S-|escape|enter|space|tab|backspace|delete|up|down|left|right|[a-zA-Z])"""
       )
-      key.split(pattern).forEach {keycode ->
+      val tokens =
+        tokenRegex
+        .findAll(key)
+        .map{it.value}
+        .toList()
+
+      logger.info("Split From Config: $tokens")
+        tokens.forEach { keycode ->
+
         when{
           keycode == "C-" -> add(KeyEvent.VK_CONTROL)
           keycode == "A-" -> add(KeyEvent.VK_ALT)
@@ -85,6 +98,7 @@ class KeyBindingConfig() {
           keycode.isUppercase() && keycode.length == 1 ->  addAll(listOf(KeyEvent.VK_SHIFT, KeyEvent.getExtendedKeyCodeForChar(keycode[0].code)))
           keycode.isLowercase() && keycode.length == 1 -> add(KeyEvent.getExtendedKeyCodeForChar(keycode[0].code))
             }
+
 
           }
         }
