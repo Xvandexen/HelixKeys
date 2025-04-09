@@ -14,7 +14,7 @@ class ModeManager(private val project: Project) {
 
     enum class Mode{
         NORMAL,
-        Insert
+        INSERT
     }
 
 var currentMode = Mode.NORMAL
@@ -24,9 +24,9 @@ var currentMode = Mode.NORMAL
 
     fun toggleMode(mode: Mode){
         currentMode= when(mode){
-            Mode.Insert -> {
+            Mode.INSERT -> {
                 thisLogger().debug("Switched To Special Mode")
-                Mode.Insert
+                Mode.INSERT
             }
             Mode.NORMAL -> {
                 thisLogger().debug("Switched To Normal Mode")

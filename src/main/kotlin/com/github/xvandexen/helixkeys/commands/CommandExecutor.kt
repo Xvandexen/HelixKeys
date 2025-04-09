@@ -2,7 +2,7 @@ package com.github.xvandexen.helixkeys.commands
 
 import com.intellij.openapi.diagnostic.thisLogger
 
-class CommandExecutor() {
+object CommandExecutor {
 
   val lastCommand: HelixCommand? = null
 
