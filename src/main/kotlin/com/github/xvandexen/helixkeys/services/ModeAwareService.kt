@@ -20,8 +20,6 @@ class ModeAwareService(private val project: Project): Disposable {
         thisLogger().info("[HelixKeys] Initializing ModeAwareService for project: ${project.name}")
 
 
-        val commandExecutor = CommandExecutor()
-        commandExecutor.executeCommand(ENTER_NORMAL_MODE)
 
 
 

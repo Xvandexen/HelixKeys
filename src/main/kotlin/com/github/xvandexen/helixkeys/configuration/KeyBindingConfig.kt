@@ -1,5 +1,7 @@
 package com.github.xvandexen.helixkeys.configuration
 
+import ai.grazie.utils.isLowercase
+import ai.grazie.utils.isUppercase
 import cc.ekblad.toml.decode
 import cc.ekblad.toml.tomlMapper
 import com.intellij.openapi.diagnostic.thisLogger
@@ -69,10 +71,30 @@ class KeyBindingConfig() {
   }
 
   private fun getKeyCodeFromString(key: String): Set<Int> {
-    // This will be implemented by you separately
+    //TODO(Set Up Proper Parsing)
+    return buildSet {
+      val pattern = Regex(
+        """(?=C-|A-|S-|\b(?:escape|enter|space|tab|backspace|delete|up|down|left|right)\b|[a-zA-Z])"""
+      )
+      key.split(pattern).forEach {keycode ->
+        when{
+          keycode == "C-" -> add(KeyEvent.VK_CONTROL)
+          keycode == "A-" -> add(KeyEvent.VK_ALT)
+          keycode == "S-" -> add(KeyEvent.VK_SHIFT)
+          keycode in setOf("escape", "enter", "space", "tab", "backspace", "delete", "up", "down" , "left" , "right") -> specialKeyNames[keycode]?.let { add(it) }
+          keycode.isUppercase() && keycode.length == 1 ->  addAll(listOf(KeyEvent.VK_SHIFT, KeyEvent.getExtendedKeyCodeForChar(keycode[0].code)))
+          keycode.isLowercase() && keycode.length == 1 -> add(KeyEvent.getExtendedKeyCodeForChar(keycode[0].code))
+            }
 
-    return key.toSet().map { c -> KeyEvent.getExtendedKeyCodeForChar(c.code)}.toSet()
-  }
+          }
+        }
+      }
+
+
+
+
+
+
 
 
   fun parseKeyBindings(map: Map<String, Any>): MutableMap<ModeManager.Mode, Map<Set<Int>, RecKeyBinding>> {
@@ -134,5 +156,5 @@ class KeyBindingConfig() {
 
 
 
-  }
+}
 

@@ -8,11 +8,19 @@ object CommandExecutor {
 
   enum class HelixCommand(val commandFunction: ( Any?)-> Boolean ) {
     ENTER_NORMAL_MODE({
+
       thisLogger().info("Executing Command: Normal Mode")
       true
     }),
+    ENTER_INSERT_MODE({
+      thisLogger().info("Executing Command: InsertMode")
+      true
+    }),
 
-    MOVE_CHAR_LEFT({true}),
+    MOVE_CHAR_LEFT({
+      thisLogger().info("Executing Command: MoveCharLeft")
+
+      true}),
     MOVE_VISUAL_LINE_UP({true}),
     MOVE_VISUAL_LINE_DOWN({true}),
     MOVE_CHAR_DOWN({true}),;
