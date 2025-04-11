@@ -9,166 +9,192 @@ import java.io.File
 import java.nio.file.Path
 import com.github.xvandexen.helixkeys.services.commands.CommandExecutor.HelixCommand
 import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager
-typealias KeyCombo = Pair<Set<Char>, KeyBindingConfig.Modifiers>
+import com.jetbrains.rd.generator.nova.PredefinedType
+
+// Updated KeyCombo to use a character code, rather than Set<Int>
+typealias KeyCombo = Pair<Char, KeyBindingConfig.Modifiers>
+
 class KeyBindingConfig() {
 
-  data class Modifiers(var control: Boolean = false, var meta : Boolean = false)
+  data class Modifiers(var control: Boolean = false, var meta: Boolean = false)
 
+  // Updated RecKeyBinding to use KeyCombo instead of Set<Int>
   data class RecKeyBinding(
     val command: HelixCommand? = null,
-    val subBindings: Map<Set<Int>, RecKeyBinding>? = null
+    val subBindings: Map<Char, RecKeyBinding>? = null,
+    val modifiers: Modifiers? = null
   )
+
   private val logger = thisLogger()
 
-
+  // Updated to map strings to characters
   private val specialKeyNames = mapOf(
-    "escape" to Char(27),
-    "enter" to Char(10),
-    "space" to ' ',
-    "tab" to Char(9),
-    "backspace" to Char(8),
-    "delete" to Char(7),
-
-  )
-
-
-
-
+      "escape" to '\u001B',
+      "enter" to '\n',
+      "space" to ' ',
+      "tab" to '\t',
+      "backspace" to '\b',
+      "delete" to '\u007F',
+      // Using custom char codes for arrow keys and navigation keys
+      "up" to '\uE000',
+      "down" to '\uE001',
+      "left" to '\uE002',
+      "right" to '\uE003',
+      "end" to '\uE004',
+      "home" to '\uE005'
+    )
 
   fun loadConfig(): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
-    val configPath: Path = ConfigPaths("helixkeys_keybinding.toml", "Helixkeys").getOsSpecificConfigPath()
-    KeyEvent.VK_UP
-    val file = File(configPath.toUri())
-    if (!file.exists()){
-      file.parentFile?.mkdirs()
-      file.createNewFile()
-      logger.info("File created at: ${file.absolutePath}")
-    } else {
-      logger.info("File Already Exists")
-    }
-
-
-
     val mapper = tomlMapper {}
+    val configFile = ConfigPaths("helixkeys_keybinding.toml", "helixkeys").getOsSpecificConfigPath().toFile()
 
-
-    val tomlFile = configPath
-    val config: Map<String, Map<String, Any>> = try{
-     mapper.decode<Map<String, Map<String, Any>>>(tomlFile)
-    }catch(e: Exception){
-      TODO("Add Popup about Config Parsing error")
-      //return DefaultConfig.createDefaultConfig()
-
-
+    if(!configFile.exists()) {
+      logger.warn("Helix config file does not exist, using defaults")
+      return mutableMapOf()
     }
-    logger.info("Config = : ${config}")
-    val  parsedBindings = parseKeyBindings(config)
-    logger.info("Parsed Config = $parsedBindings")
-    return parsedBindings
+
+    return try {
+      val configData: Map<String, Map<String,Map<String,Any>>> = mapper.decode(Path.of(configFile.absolutePath))
+      logger.info("Unparsed Bindings = $configData")
+      val parsedBindings = parseKeyBindings(configData)
+      logger.info("ParsedBindings = $parsedBindings")
+       parsedBindings
+    } catch (e: Exception) {
+      logger.warn("Failed to parse Helix config file", e)
+      mutableMapOf()
+    }
   }
 
+  // Updated to return KeyCombo (Char, Modifiers)
   private fun getKeyCodeFromString(keys: String): KeyCombo {
-    //TODO(Set Up Proper Parsing)
-    var keySet: Set<Char> = mutableSetOf()
-    var modifiers = Modifiers()
-      val tokenRegex = Regex(
-        // Tokens listed in order: modifiers (like C-), keywords (like escape)
-        // and finally a single letter (matches any A-Z or a-z).
-        """(C-|A-|S-|escape|enter|space|tab|backspace|delete|up|down|left|right|[a-zA-Z])"""
-      )
-      val tokens =
-        tokenRegex
-        .findAll(keys)
-        .map{it.value}
-        .toList()
+    val modifiers = Modifiers()
 
-      logger.info("Split From Config: $tokens")
-    var nextToUpper = false
-        tokens.forEach { keycode ->
-          var keycode = keycode
-          if (nextToUpper) {keycode = keycode.uppercase(); nextToUpper = false}
+    // Process modifiers
+    val keyWithoutModifiers = keys.replace("C-", "").also {
+      if (it.length != keys.length) modifiers.control = true
+    }.replace("M-", "").also {
+      if (it.length != keys.length - (if (modifiers.control) 2 else 0)) modifiers.meta = true
+    }
 
-        when{
-          keycode == "C-" -> modifiers.control= true
-          keycode == "A-" -> modifiers.meta = true
-          //Shift converts alpha upper
-          keycode == "S-" ->  nextToUpper = true
+    // Get the main key character
+    val keyChar = when {
+      keyWithoutModifiers.length == 1 -> keyWithoutModifiers[0]
+      specialKeyNames.containsKey(keyWithoutModifiers.lowercase()) ->
+        specialKeyNames[keyWithoutModifiers.lowercase()] ?: '\u0000'
+      else -> {
+        logger.warn("Unknown key: $keyWithoutModifiers")
+        '\u0000' // Null character for unknown keys
+      }
+    }
 
-          keycode in setOf("escape", "enter", "space", "tab", "backspace", "delete", "up", "down" , "left" , "right") -> specialKeyNames[keycode]?.let{it.se}
-          keycode.isUppercase() && keycode.length == 1 ->  addAll(listOf(KeyEvent.VK_SHIFT, KeyEvent.getExtendedKeyCodeForChar(keycode[0].code)))
-          keycode.length == 1 -> add(KeyEvent.getExtendedKeyCodeForChar(keycode[0].code))
+    return KeyCombo(keyChar, modifiers)
+  }
+
+  private fun parseKeyBindings(map: Map<String, Map<String, Map<String, Any>>>): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
+    val result = mutableMapOf<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>>()
+
+    map.forEach { (category, modeBindings) ->
+      if (category == "keys") {
+        // Process normal mode bindings
+        val normalBindings = mutableMapOf<KeyCombo, RecKeyBinding>()
+
+        modeBindings.forEach { (modeKey, bindings) ->
+          when (modeKey) {
+            "normal" -> {
+              bindings.forEach { (keyString, value) ->
+                val keyCombo = getKeyCodeFromString(keyString)
+
+                when (value) {
+                  is String -> {
+                    // Direct command binding
+                    val command = try {
+                      HelixCommand.valueOf(value.uppercase())
+                    } catch (e: IllegalArgumentException) {
+                      logger.warn("Unknown command: $value")
+                      null
+                    }
+                    normalBindings[keyCombo] = RecKeyBinding(command = command)
+                  }
+                  is Map<*, *> -> {
+                    // Handle nested bindings
+                    @Suppress("UNCHECKED_CAST")
+                    val subBindings = parseNestedBindings(value as Map<String, Any>)
+                    normalBindings[keyCombo] = RecKeyBinding(subBindings = subBindings)
+                  }
+                }
+              }
+              result[ModeManager.Mode.NORMAL] = normalBindings
             }
+            "insert" -> {
+              // Process insert mode bindings
+              val insertBindings = mutableMapOf<KeyCombo, RecKeyBinding>()
 
+              bindings.forEach { (keyString, value) ->
+                val keyCombo = getKeyCodeFromString(keyString)
 
+                when (value) {
+                  is String -> {
+                    // Direct command binding
+                    val command = try {
+                      HelixCommand.valueOf(value.uppercase())
+                    } catch (e: IllegalArgumentException) {
+                      logger.warn("Unknown command: $value")
+                      null
+                    }
+                    insertBindings[keyCombo] = RecKeyBinding(command = command)
+                  }
+                  is Map<*, *> -> {
+                    // Handle nested bindings
+                    @Suppress("UNCHECKED_CAST")
+                    val subBindings = parseNestedBindings(value as Map<String, Any>)
+                    insertBindings[keyCombo] = RecKeyBinding(subBindings = subBindings)
+                  }
+                }
+              }
+              result[ModeManager.Mode.INSERT] = insertBindings
+            }
           }
         }
       }
+    }
 
-
-
-
-
-
-
-
-  fun parseKeyBindings(map: Map<String, Any>): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
-    // This function parses the top-level mode keys (normal, insert, etc.)
-    // and returns a map of mode enum -> submappings
-    val result = mutableMapOf<ModeManager.Mode, Map<Set<Int>, RecKeyBinding>>()
-
-    for ((modeKey, value) in map) {
-      // Convert the string mode to enum
-      try {
-        val modeEnum = ModeManager.Mode.valueOf(modeKey.uppercase())
-
-        if (value is Map<*, *>) {
-          @Suppress("UNCHECKED_CAST")
-          val modeMap = value as Map<KeyCombo, Any>
-          result[modeEnum] = parseBindingsForMode(modeMap)
-        }
-      } catch (e: IllegalArgumentException) {
-        // Skip modes that don't match our enum
-        // Or log them if needed
-        println("Warning: Unrecognized mode: $modeKey")
-      }
+    // Log the results for debugging
+    logger.debug("Parsed key bindings: ${result.size} modes")
+    result.forEach { (mode, bindings) ->
+      logger.debug("  Mode $mode: ${bindings.size} bindings")
     }
 
     return result
   }
+    // Add more debug logging
 
-  private fun parseBindingsForMode(map: Map<String, Any>): MutableMap<KeyCombo, RecKeyBinding> {
-    // This function handles the key bindings within a mode
-    val result = mutableMapOf<Set<Int>, RecKeyBinding>()
+  // Helper method to parse nested bindings
+  private fun parseNestedBindings(map: Map<String, Any>): Map<Char, RecKeyBinding> {
+    val result = mutableMapOf<Char, RecKeyBinding>()
 
-    for ((key, value) in map) {
-      val keyCombo: KeyCombo =  getKeyCodeFromString(key)
+    map.forEach { (keyStr, binding) ->
+      val keyCombo = getKeyCodeFromString(keyStr)
+      val keyChar = keyCombo.first
+      val modifiers = keyCombo.second
 
-      when (value) {
+      when (binding) {
         is String -> {
-          // Convert the string command to enum
-          try {
-            val commandEnum = HelixCommand.valueOf(value.uppercase())
-            result[keyCode] = RecKeyBinding(command = commandEnum)
-          } catch (e: IllegalArgumentException) {
-            // Skip commands that don't match our enum
-            // Or log them if needed
-            println("Warning: Unrecognized command: $value")
-          }
+          result[keyChar] = RecKeyBinding(
+            command = HelixCommand.valueOf(binding.uppercase()),
+            modifiers = modifiers
+          )
         }
         is Map<*, *> -> {
           @Suppress("UNCHECKED_CAST")
-          val nestedMap = value as Map<String, Any>
-          val subBindings = parseBindingsForMode(nestedMap)
-          result[keyCode] = RecKeyBinding(subBindings = subBindings)
+          val subBindings = parseNestedBindings(binding as Map<String, Any>)
+          result[keyChar] = RecKeyBinding(
+            subBindings = subBindings,
+            modifiers = modifiers
+          )
         }
       }
     }
 
     return result
   }
-
-
-
-
 }
-

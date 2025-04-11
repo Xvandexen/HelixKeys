@@ -1,6 +1,7 @@
 package com.github.xvandexen.helixkeys.startup
 
 import com.github.xvandexen.helixkeys.services.configuration.KeyBindingConfig
+import com.github.xvandexen.helixkeys.services.configuration.KeyCombo
 import com.github.xvandexen.helixkeys.services.functionaltity.ModalKeyManager
 import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager
 import com.github.xvandexen.helixkeys.services.ui.UiHandler
@@ -19,7 +20,7 @@ class ModeAwareService(private val project: Project): Disposable {
         thisLogger().info("[HelixKeys] Initializing ModeAwareService for project: ${project.name}")
 
 
-        val keybindings: MutableMap<ModeManager.Mode, Map<Set<Int>, KeyBindingConfig.RecKeyBinding>> = KeyBindingConfig().loadConfig()
+        val keybindings: MutableMap<ModeManager.Mode, Map<KeyCombo, KeyBindingConfig.RecKeyBinding>> = KeyBindingConfig().loadConfig()
 
 
 

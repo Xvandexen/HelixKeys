@@ -16,6 +16,7 @@ import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
+import com.jetbrains.rd.generator.nova.PredefinedType
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.KeyStroke
@@ -29,7 +30,7 @@ class UiHandler(val project: Project): Disposable{
   private val commandOverlay = CommandOverlayPanel(project)
 
 
-  fun displayMenu(subBindings: Map<Set<Int>, KeyBindingConfig.RecKeyBinding>) {
+  fun displayMenu(subBindings: Map<Char, KeyBindingConfig.RecKeyBinding>) {
     // Use the overlay panel instead of popup
     commandOverlay.showBindings(subBindings)
   }

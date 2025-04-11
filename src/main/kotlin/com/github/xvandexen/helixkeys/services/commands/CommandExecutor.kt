@@ -3,13 +3,11 @@ package com.github.xvandexen.helixkeys.services.commands
 import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager
 import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager.Mode.INSERT
 import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager.Mode.NORMAL
-import com.github.xvandexen.helixkeys.startup.ModeAwareService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger
-import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
@@ -22,7 +20,8 @@ class CommandExecutor(val project: Project): Disposable {
 
   private lateinit var context: DataContext
   val lastCommand: HelixCommand? = null
-  private lateinit var editor: EditorEx
+  lateinit var editor: EditorEx
+  private set
 
   enum class HelixCommand(val commandFunction: (CommandExecutor, Any?)-> Any? ) {
 
@@ -34,8 +33,12 @@ class CommandExecutor(val project: Project): Disposable {
     MOVE_VISUAL_LINE_UP({ x,_ -> x.executeActionById("EditorUp")}),
     MOVE_CHAR_RIGHT({ x,_ -> x.executeActionById("EditorRight") }),
 
-    MOVE_NEXT_WORD_START({x,_ -> x.executeActionById("EditorNextWordWithSelection") }),
-    MOVE_NEXT_WORD_END({x,_ -> x.executeActionById("EditorPreviousWordWithSelection")}),
+    MOVE_NEXT_WORD_START({x,_ -> MoveActions.nextWordStart(x) }),
+    MOVE_PREV_WORD_START({x,_ -> MoveActions.prevWordStart(x)}),
+
+    MOVE_NEXT_WORD_END({x,_ -> MoveActions.nextWordEnd(x)}),
+    MOVE_PREV_WORD_END({x,_ -> MoveActions.prevWordEnd(x)}),
+
     MOVE_NEXT_LONG_WORD_START({x,_->}),
     MOVE_PREV_LONG_WORD_START({x,_->}),
     MOVE_NEXT_LONG_WORD_END({x,_->})
@@ -85,6 +88,9 @@ class CommandExecutor(val project: Project): Disposable {
     @JvmStatic
     fun getInstance(project: Project): CommandExecutor= project.service()
   }
+
+
+
 
 
 }

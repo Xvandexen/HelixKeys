@@ -66,7 +66,7 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
   /**
    * Updates the panel with new bindings and shows it
    */
-  fun showBindings(subBindings: Map<Set<Int>, KeyBindingConfig.RecKeyBinding>) {
+  fun showBindings(subBindings: Map<Char, KeyBindingConfig.RecKeyBinding>) {
     removeAll()
 
     // Panel title
@@ -85,16 +85,14 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
     bindingsPanel.addMouseListener(PassthroughMouseListener())
 
     // Add each binding to the panel
-    for ((keys, binding) in subBindings) {
-      val keyText = keys.joinToString("+") {
-        KeymapUtil.getKeystrokeText(KeyStroke.getKeyStroke(it, 0))
-      }
+    for ((key, binding) in subBindings) {
+
 
       val bindingPanel = JBPanel<JBPanel<*>>(BorderLayout(5, 0))
       bindingPanel.isOpaque = false
       bindingPanel.addMouseListener(PassthroughMouseListener())
 
-      val keyLabel = JBLabel("$keyText:     ")
+      val keyLabel = JBLabel("$key:     ")
       keyLabel.foreground = JBColor.BLUE
       keyLabel.font = JBUI.Fonts.label().asBold()
       keyLabel.addMouseListener(PassthroughMouseListener())
