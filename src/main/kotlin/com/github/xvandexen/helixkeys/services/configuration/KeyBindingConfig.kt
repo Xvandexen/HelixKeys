@@ -1,6 +1,5 @@
-package com.github.xvandexen.helixkeys.configuration
+package com.github.xvandexen.helixkeys.services.configuration
 
-import ai.grazie.utils.isLowercase
 import ai.grazie.utils.isUppercase
 import cc.ekblad.toml.decode
 import cc.ekblad.toml.tomlMapper
@@ -8,10 +7,12 @@ import com.intellij.openapi.diagnostic.thisLogger
 import java.awt.event.KeyEvent
 import java.io.File
 import java.nio.file.Path
-import com.github.xvandexen.helixkeys.commands.CommandExecutor.HelixCommand
-import com.github.xvandexen.helixkeys.functionaltity.ModeManager
-
+import com.github.xvandexen.helixkeys.services.commands.CommandExecutor.HelixCommand
+import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager
+typealias KeyCombo = Pair<Set<Char>, KeyBindingConfig.Modifiers>
 class KeyBindingConfig() {
+
+  data class Modifiers(var control: Boolean = false, var meta : Boolean = false)
 
   data class RecKeyBinding(
     val command: HelixCommand? = null,
@@ -21,46 +22,42 @@ class KeyBindingConfig() {
 
 
   private val specialKeyNames = mapOf(
-    "escape" to KeyEvent.VK_ESCAPE,
-    "enter" to KeyEvent.VK_ENTER,
-    "space" to KeyEvent.VK_SPACE,
-    "tab" to KeyEvent.VK_TAB,
-    "backspace" to KeyEvent.VK_BACK_SPACE,
-    "delete" to KeyEvent.VK_DELETE,
-    "up" to KeyEvent.VK_UP,
-    "down" to KeyEvent.VK_DOWN,
-    "left" to KeyEvent.VK_LEFT,
-    "right" to KeyEvent.VK_RIGHT
+    "escape" to Char(27),
+    "enter" to Char(10),
+    "space" to ' ',
+    "tab" to Char(9),
+    "backspace" to Char(8),
+    "delete" to Char(7),
+
   )
 
 
 
 
 
-  fun loadConfig(): MutableMap<ModeManager.Mode, Map<Set<Int>, RecKeyBinding>> {
+  fun loadConfig(): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
     val configPath: Path = ConfigPaths("helixkeys_keybinding.toml", "Helixkeys").getOsSpecificConfigPath()
+    KeyEvent.VK_UP
     val file = File(configPath.toUri())
     if (!file.exists()){
       file.parentFile?.mkdirs()
       file.createNewFile()
       logger.info("File created at: ${file.absolutePath}")
-    } else logger.info("File Already Exists")
-
-
-
-    val mapper = tomlMapper {
-
-
-
+    } else {
+      logger.info("File Already Exists")
     }
+
+
+
+    val mapper = tomlMapper {}
 
 
     val tomlFile = configPath
     val config: Map<String, Map<String, Any>> = try{
      mapper.decode<Map<String, Map<String, Any>>>(tomlFile)
     }catch(e: Exception){
-      //TODO(Add Popup about Config Parsing error)
-      return DefaultConfig.createDefaultConfig()
+      TODO("Add Popup about Config Parsing error")
+      //return DefaultConfig.createDefaultConfig()
 
 
     }
@@ -70,12 +67,10 @@ class KeyBindingConfig() {
     return parsedBindings
   }
 
-  private fun getKeyCodeFromString(key: String): Set<Int> {
+  private fun getKeyCodeFromString(keys: String): KeyCombo {
     //TODO(Set Up Proper Parsing)
-    return buildSet {
-
-
-
+    var keySet: Set<Char> = mutableSetOf()
+    var modifiers = Modifiers()
       val tokenRegex = Regex(
         // Tokens listed in order: modifiers (like C-), keywords (like escape)
         // and finally a single letter (matches any A-Z or a-z).
@@ -83,20 +78,25 @@ class KeyBindingConfig() {
       )
       val tokens =
         tokenRegex
-        .findAll(key)
+        .findAll(keys)
         .map{it.value}
         .toList()
 
       logger.info("Split From Config: $tokens")
+    var nextToUpper = false
         tokens.forEach { keycode ->
+          var keycode = keycode
+          if (nextToUpper) {keycode = keycode.uppercase(); nextToUpper = false}
 
         when{
-          keycode == "C-" -> add(KeyEvent.VK_CONTROL)
-          keycode == "A-" -> add(KeyEvent.VK_ALT)
-          keycode == "S-" -> add(KeyEvent.VK_SHIFT)
-          keycode in setOf("escape", "enter", "space", "tab", "backspace", "delete", "up", "down" , "left" , "right") -> specialKeyNames[keycode]?.let { add(it) }
+          keycode == "C-" -> modifiers.control= true
+          keycode == "A-" -> modifiers.meta = true
+          //Shift converts alpha upper
+          keycode == "S-" ->  nextToUpper = true
+
+          keycode in setOf("escape", "enter", "space", "tab", "backspace", "delete", "up", "down" , "left" , "right") -> specialKeyNames[keycode]?.let{it.se}
           keycode.isUppercase() && keycode.length == 1 ->  addAll(listOf(KeyEvent.VK_SHIFT, KeyEvent.getExtendedKeyCodeForChar(keycode[0].code)))
-          keycode.isLowercase() && keycode.length == 1 -> add(KeyEvent.getExtendedKeyCodeForChar(keycode[0].code))
+          keycode.length == 1 -> add(KeyEvent.getExtendedKeyCodeForChar(keycode[0].code))
             }
 
 
@@ -111,7 +111,7 @@ class KeyBindingConfig() {
 
 
 
-  fun parseKeyBindings(map: Map<String, Any>): MutableMap<ModeManager.Mode, Map<Set<Int>, RecKeyBinding>> {
+  fun parseKeyBindings(map: Map<String, Any>): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
     // This function parses the top-level mode keys (normal, insert, etc.)
     // and returns a map of mode enum -> submappings
     val result = mutableMapOf<ModeManager.Mode, Map<Set<Int>, RecKeyBinding>>()
@@ -123,7 +123,7 @@ class KeyBindingConfig() {
 
         if (value is Map<*, *>) {
           @Suppress("UNCHECKED_CAST")
-          val modeMap = value as Map<String, Any>
+          val modeMap = value as Map<KeyCombo, Any>
           result[modeEnum] = parseBindingsForMode(modeMap)
         }
       } catch (e: IllegalArgumentException) {
@@ -136,12 +136,12 @@ class KeyBindingConfig() {
     return result
   }
 
-  private fun parseBindingsForMode(map: Map<String, Any>): MutableMap<Set<Int>, RecKeyBinding> {
+  private fun parseBindingsForMode(map: Map<String, Any>): MutableMap<KeyCombo, RecKeyBinding> {
     // This function handles the key bindings within a mode
     val result = mutableMapOf<Set<Int>, RecKeyBinding>()
 
     for ((key, value) in map) {
-      val keyCode =  getKeyCodeFromString(key)
+      val keyCombo: KeyCombo =  getKeyCodeFromString(key)
 
       when (value) {
         is String -> {

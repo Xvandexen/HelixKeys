@@ -1,14 +1,17 @@
-package com.github.xvandexen.helixkeys.functionaltity
+package com.github.xvandexen.helixkeys.services.functionaltity
 
-import com.github.xvandexen.helixkeys.commands.CommandExecutor
-import com.github.xvandexen.helixkeys.configuration.KeyBindingConfig.RecKeyBinding
-import com.github.xvandexen.helixkeys.ui.UiHandler
+import com.github.xvandexen.helixkeys.services.commands.CommandExecutor
+import com.github.xvandexen.helixkeys.services.configuration.KeyBindingConfig.RecKeyBinding
+import com.github.xvandexen.helixkeys.services.ui.UiHandler
 import com.intellij.ide.IdeEventQueue
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import java.awt.event.KeyEvent
+import java.awt.event.KeyEvent.*
 
 typealias KeyBindingMap = Map<Set<Int>, RecKeyBinding>
 
@@ -18,6 +21,10 @@ class ModalKeyManager(
 ) : Disposable {
 
 
+  private var repeatCommandForThis: String = ""
+  private val modeManager = ModeManager.getInstance(project)
+  private val uIHandler = UiHandler.getInstance(project)
+  private val commandExecutor: CommandExecutor = CommandExecutor.getInstance(project)
   private val normalModeBindings: KeyBindingMap =  keybindings[ModeManager.Mode.NORMAL] ?: error("No bindings for NORMAL mode")
   private val insertModeBindings: KeyBindingMap = keybindings[ModeManager.Mode.INSERT] ?: error("No bindings for NORMAL mode")
   private val visualModeBindings: KeyBindingMap = mutableMapOf()
@@ -26,7 +33,7 @@ class ModalKeyManager(
 
 
   init {
-    activeKeyCordMap = insertModeBindings
+    activeKeyCordMap = normalModeBindings
     IdeEventQueue.getInstance().addDispatcher({ event ->
       if (event is KeyEvent) {
         handleEvent(event)
@@ -41,28 +48,37 @@ class ModalKeyManager(
   private fun handleEvent(event: Any): Boolean {
     if (event !is KeyEvent) return false
     when (event.id) {
-      KeyEvent.KEY_PRESSED -> return handleKeyPress(event.keyCode)
-      KeyEvent.KEY_RELEASED -> return handlekeyRelease(event.keyCode)
-      KeyEvent.KEY_TYPED -> return typedInBindings(event.keyChar)
+      KEY_PRESSED -> return handleKeyPress(event.keyCode)
+      KEY_RELEASED -> return handlekeyRelease(event.keyCode)
+      KEY_TYPED -> return typedInBindings(event.keyChar)
     }
 
     return false
   }
 
   private fun typedInBindings(keyChar: Char): Boolean {
-    val heldKeys = buildSet { add(KeyEvent.getExtendedKeyCodeForChar(keyChar.code)); addAll(activeModifiers) }
-    return (normalModeBindings.containsKey(heldKeys) || insertModeBindings.containsKey(heldKeys))
-    //TODO("Find Better Way")
+    val heldKeys = buildSet { add(getExtendedKeyCodeForChar(keyChar.code)); addAll(activeModifiers) }
+    thisLogger().info("Typed Char = $keyChar + ${keyChar.code}" )
+
+    return when (modeManager.currentMode) {
+      ModeManager.Mode.NORMAL -> true
+      ModeManager.Mode.INSERT -> insertModeBindings.containsKey(heldKeys)
+    }
   }
 
   private fun handleKeyPress(keycode: Int): Boolean {
     val heldKeys = buildSet { add(keycode); addAll(activeModifiers) }
-    thisLogger().info("heldKeys. = $heldKeys")
+    thisLogger().info("heldKeys = $heldKeys")
 
     when (keycode) {
-      KeyEvent.VK_SHIFT -> activeModifiers.add(KeyEvent.VK_SHIFT)
-      KeyEvent.VK_CONTROL -> activeModifiers.add(KeyEvent.VK_CONTROL)
-      KeyEvent.VK_ALT -> activeModifiers.add(KeyEvent.VK_ALT)
+      VK_SHIFT -> activeModifiers.add(VK_SHIFT)
+      VK_CONTROL -> activeModifiers.add(VK_CONTROL)
+      VK_ALT -> activeModifiers.add(VK_ALT)
+
+      VK_1, VK_2, VK_3, VK_4, VK_5, VK_6, VK_7,VK_8,VK_9, VK_0,
+      VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3, VK_NUMPAD4,VK_NUMPAD5,VK_NUMPAD6, VK_NUMPAD7,VK_NUMPAD8,VK_NUMPAD9, VK_NUMPAD0
+        -> repeatCommandForThis += keycode.toChar()
+
       else -> {
         thisLogger().info("""
           |Else Branch active
@@ -88,25 +104,32 @@ class ModalKeyManager(
   }
 
   private fun attemptCommand(command: CommandExecutor.HelixCommand) {
-    activeKeyCordMap = when (ModeManager.currentMode) {
+    if (repeatCommandForThis != ""){
+      commandExecutor.executeCommandXTimes(repeatCommandForThis,command)
+    }
+    else{
+    commandExecutor.executeCommand(command)}
+    repeatCommandForThis = ""
+    activeKeyCordMap = when (modeManager.currentMode) {
       ModeManager.Mode.NORMAL -> normalModeBindings
       ModeManager.Mode.INSERT -> insertModeBindings
     }
+    uIHandler.closeMenu()
     thisLogger().info("Command Found[$command], Reseting activeKeyCordMap to = $activeKeyCordMap")
 
-    CommandExecutor.executeCommand(command)
 
   }
 
   private fun handleSubMenu(subBindings: Map<Set<Int>, RecKeyBinding>) {
-    UiHandler.displayMenu(subBindings)
+    uIHandler.displayMenu(subBindings)
     activeKeyCordMap= subBindings
+    repeatCommandForThis= ""
   }
 
   private fun handlekeyRelease(keycode: Int): Boolean {
     thisLogger().info("Key Released $keycode" )
     return when (keycode) {
-      KeyEvent.VK_SHIFT, KeyEvent.VK_ALT, KeyEvent.VK_CONTROL -> {
+      VK_SHIFT, VK_ALT, VK_CONTROL -> {
         activeModifiers.remove(keycode); true
       }
 
@@ -121,7 +144,7 @@ class ModalKeyManager(
 
 
   override fun dispose() {
-    TODO("Not yet implemented")
+    Disposer.dispose(this)
   }
 
 
