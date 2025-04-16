@@ -1,24 +1,19 @@
 package com.github.xvandexen.helixkeys.services.functionaltity
 
-import com.github.xvandexen.helixkeys.services.ui.UiHandler
-import com.github.xvandexen.helixkeys.startup.ModeAwareService
+import com.github.xvandexen.helixkeys.services.ui.statusbar.StatusBarManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 
 
 @Service(Service.Level.PROJECT)
-class ModeManager(project: Project):Disposable{
-
-    private val uIHandler = UiHandler.getInstance(project)
-
-
+class ModeManager(val project: Project):Disposable{
     enum class Mode{
         NORMAL,
-        INSERT
+        INSERT,
+        SELECT
     }
 
     var currentMode = Mode.NORMAL
@@ -26,19 +21,8 @@ class ModeManager(project: Project):Disposable{
 
 
     fun toggleMode(mode: Mode){
-        currentMode = when(mode){
-            Mode.INSERT -> {
-                thisLogger().debug("Switched To Special Mode")
-                uIHandler.switchMode(mode)
-                Mode.INSERT
-            }
-            Mode.NORMAL -> {
-                thisLogger().debug("Switched To Normal Mode")
-                uIHandler.switchMode(mode)
-                Mode.NORMAL
-
-            }
-        }
+        currentMode = mode
+        StatusBarManager.getInstance(project).setText(mode.name)
 
     }
 

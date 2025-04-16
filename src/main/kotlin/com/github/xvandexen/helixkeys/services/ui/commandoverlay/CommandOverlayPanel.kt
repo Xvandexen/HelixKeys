@@ -1,11 +1,11 @@
-package com.github.xvandexen.helixkeys.services.ui
+package com.github.xvandexen.helixkeys.services.ui.commandoverlay
 
 import com.github.xvandexen.helixkeys.services.configuration.KeyBindingConfig
+import com.github.xvandexen.helixkeys.services.configuration.KeyCombo
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
@@ -14,9 +14,10 @@ import com.intellij.util.ui.JBUI
 import java.awt.*
 import java.awt.event.MouseEvent
 import javax.swing.JLayeredPane
-import javax.swing.KeyStroke
 import javax.swing.SwingUtilities
-import com.intellij.openapi.keymap.KeymapUtil
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.ui.scale.JBUIScale
 import javax.swing.event.MouseInputAdapter
 
 /**
@@ -26,7 +27,9 @@ import javax.swing.event.MouseInputAdapter
 class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlayPanel>(BorderLayout()), Disposable {
 
   private var isVisible = false
-
+  private val LOG = Logger.getInstance(CommandOverlayPanel::class.java)
+  private var currentLayeredPane: JLayeredPane? = null
+  
   init {
     // Make panel semi-transparent with a border
     background = JBColor(Color(40, 40, 40, 200), Color(60, 60, 60, 200))
@@ -34,12 +37,9 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
     preferredSize = JBUI.size(250, 150)
     isOpaque = true
 
-    // Make the panel non-interactive by having it ignore all mouse events
-    addMouseListener(PassthroughMouseListener())
-    addMouseMotionListener(PassthroughMouseListener())
-
-    // Initially hidden
+    // Panel should be invisible until explicitly shown
     isVisible = false
+    setVisible(false)
   }
 
   /**
@@ -59,14 +59,21 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
    * Override to ensure mouse events are ignored and passed through
    */
   override fun contains(x: Int, y: Int): Boolean {
-    // Always return false to let mouse events pass through
-    return false
+    return false // Always return false to pass events through
   }
 
   /**
    * Updates the panel with new bindings and shows it
    */
-  fun showBindings(subBindings: Map<Char, KeyBindingConfig.RecKeyBinding>) {
+  fun showBindings(subBindings: Map<KeyCombo, KeyBindingConfig.RecKeyBinding>) {
+    if (ApplicationManager.getApplication().isDispatchThread) {
+      updateBindingsPanel(subBindings)
+    } else {
+      SwingUtilities.invokeLater { updateBindingsPanel(subBindings) }
+    }
+  }
+
+  private fun updateBindingsPanel(subBindings: Map<KeyCombo, KeyBindingConfig.RecKeyBinding>) {
     removeAll()
 
     // Panel title
@@ -81,26 +88,18 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
     bindingsPanel.isOpaque = false
     bindingsPanel.border = JBUI.Borders.empty(5)
 
-    // Make all child components non-interactive too
-    bindingsPanel.addMouseListener(PassthroughMouseListener())
-
     // Add each binding to the panel
     for ((key, binding) in subBindings) {
-
-
       val bindingPanel = JBPanel<JBPanel<*>>(BorderLayout(5, 0))
       bindingPanel.isOpaque = false
-      bindingPanel.addMouseListener(PassthroughMouseListener())
 
       val keyLabel = JBLabel("$key:     ")
       keyLabel.foreground = JBColor.BLUE
       keyLabel.font = JBUI.Fonts.label().asBold()
-      keyLabel.addMouseListener(PassthroughMouseListener())
       bindingPanel.add(keyLabel, BorderLayout.WEST)
 
       val commandLabel = JBLabel(binding.command.toString())
       commandLabel.foreground = JBColor.RED
-      commandLabel.addMouseListener(PassthroughMouseListener())
       bindingPanel.add(commandLabel, BorderLayout.CENTER)
 
       bindingsPanel.add(bindingPanel)
@@ -108,10 +107,18 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
 
     add(bindingsPanel, BorderLayout.CENTER)
 
-    // Make visible
-    isVisible = true
+    // Attach to editor if not yet attached
+    val editor = FileEditorManager.getInstance(project).selectedTextEditor
+    if (editor != null) {
+      attachToEditor(editor)
+    } else {
+      LOG.warn("Cannot show command overlay: no text editor selected")
+      return
+    }
 
-    // Update in editor
+    // Make visible and update position
+    isVisible = true
+    setVisible(true)
     updatePosition()
 
     // Ensure visible
@@ -123,16 +130,24 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
    * Hides the panel
    */
   fun hidePanel() {
-    if (isVisible) {
-      isVisible = false
+    if (ApplicationManager.getApplication().isDispatchThread) {
+      performHide()
+    } else {
+      SwingUtilities.invokeLater { performHide() }
+    }
+  }
 
-      // Check if still attached to any parent
-      val parent = parent
-      if (parent != null) {
-        parent.remove(this)
-        parent.revalidate()
-        parent.repaint()
-      }
+  private fun performHide() {
+    isVisible = false
+    setVisible(false)
+    
+    // Remove from layered pane if attached
+    val parent = parent
+    if (parent is JLayeredPane) {
+      parent.remove(this)
+      parent.revalidate()
+      parent.repaint()
+      currentLayeredPane = null
     }
   }
 
@@ -140,44 +155,40 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
    * Updates the position of the panel in the current editor
    */
   private fun updatePosition() {
-    // Get current editor
     val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
-
-    // Try to add to editor's layered pane
-    SwingUtilities.invokeLater {
-      attachToEditor(editor)
-    }
+    val visibleRect = editor.scrollingModel.visibleArea
+    
+    // Position in bottom right with some padding
+    val padding = JBUIScale.scale(20)
+    val x = visibleRect.x + visibleRect.width - width - padding
+    val y = visibleRect.y + visibleRect.height - height - padding
+    
+    setBounds(x, y, width, height)
   }
 
   /**
    * Attaches the panel to the editor's layered pane
    */
   private fun attachToEditor(editor: Editor) {
-    if (!isVisible) return
-
-    // Get component and layered pane
-    val editorComponent = editor.component
-    val layeredPane = findLayeredPane(editorComponent)
-
+    val layeredPane = findLayeredPane(editor.component)
     if (layeredPane != null) {
-      // Remove from current parent if attached
-      val parent = parent
-      if (parent != null) {
-        parent.remove(this)
+      // Only attach if not already attached to this pane
+      if (currentLayeredPane != layeredPane) {
+        // Remove from current parent if needed
+        val parent = parent
+        if (parent is JLayeredPane) {
+          parent.remove(this)
+        }
+        
+        // Add to new layered pane
+        layeredPane.add(this, JLayeredPane.POPUP_LAYER)
+        currentLayeredPane = layeredPane
+        
+        // Make sure size is calculated
+        setSize(preferredSize)
       }
-
-      // Add to layered pane, above other components
-      layeredPane.add(this, JLayeredPane.POPUP_LAYER + 1)
-
-      // Position in bottom right with margin
-      val bounds = layeredPane.bounds
-      val x = bounds.width - preferredSize.width - 20
-      val y = bounds.height - preferredSize.height - 20
-
-      setBounds(x, y, preferredSize.width, preferredSize.height)
-
-      layeredPane.revalidate()
-      layeredPane.repaint()
+    } else {
+      LOG.warn("Cannot attach command overlay: no layered pane found in editor")
     }
   }
 
@@ -185,16 +196,12 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
    * Finds a JLayeredPane ancestor for the component
    */
   private fun findLayeredPane(component: Component): JLayeredPane? {
-    var current: Component? = component
-
-    while (current != null) {
-      if (current is JLayeredPane) {
-        return current
-      }
-      current = current.parent
+    if (component is JLayeredPane) {
+      return component
     }
-
-    return null
+    
+    val parent = component.parent ?: return null
+    return findLayeredPane(parent)
   }
 
   override fun dispose() {
