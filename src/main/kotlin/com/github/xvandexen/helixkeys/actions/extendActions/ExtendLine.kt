@@ -21,7 +21,7 @@ class ExtendLine : AnAction() {
     }!!
 
     if (!selectionModel.hasSelection()) {
-      // Select current line if nothing is selected
+      // Select the current line if nothing is selected
       val currentLineNumber = caretModel.logicalPosition.line
       val lineStartOffset = document.getLineStartOffset(currentLineNumber)
       val lineEndOffset = document.getLineEndOffset(currentLineNumber)
@@ -32,8 +32,8 @@ class ExtendLine : AnAction() {
       editorRegister.updateAnchor(lineStartOffset)
       caretModel.moveToOffset(lineEndOffset)
 
-      // Add to selection history
-      editorRegister?.addSelectionToHistory(lineStartOffset, lineEndOffset)
+      // Add to the selection history
+      editorRegister.addSelectionToHistory(lineStartOffset, lineEndOffset)
     } else {
       // Get the anchor position
       val anchor = editorRegister.anchor ?: run {
@@ -44,11 +44,13 @@ class ExtendLine : AnAction() {
         newAnchor
       }
 
-      // Check if anchor is at start or end of selection
-      val isAnchorAtSelectionStart = anchor == selectionModel.selectionStart
+      // Determine the current caret position
+      val caretOffset = caretModel.offset
 
-      if (isAnchorAtSelectionStart) {
-        // Anchor is at selection start, extend downward
+      // Determine if we need to extend the selection upward or downward
+      // based on where the caret is relative to the anchor
+      if (caretOffset == selectionModel.selectionEnd) {
+        // Caret is at the end, extend downward
         val currentEndLine = editor.offsetToLogicalPosition(selectionModel.selectionEnd).line
         if (currentEndLine < document.lineCount - 1) {
           val newEndOffset = document.getLineEndOffset(currentEndLine + 1)
@@ -60,7 +62,7 @@ class ExtendLine : AnAction() {
           editorRegister.addSelectionToHistory(anchor, newEndOffset)
         }
       } else {
-        // Anchor is at selection end, extend upward
+        // Caret is at the start, extend upward
         val currentStartLine = editor.offsetToLogicalPosition(selectionModel.selectionStart).line
         if (currentStartLine > 0) {
           val newStartOffset = document.getLineStartOffset(currentStartLine - 1)
