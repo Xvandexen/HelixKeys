@@ -6,7 +6,22 @@ import com.github.xvandexen.helixkeys.actions.moveActions.MoveActions.isWhitespa
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
+/**
+ * Action that moves the caret to the start of the previous word.
+ * 
+ * This action implements the Helix editor's "b" command, which moves the cursor
+ * to the beginning of the previous word. It also selects the text between the current
+ * position and the previous word start.
+ */
 class PrevWordStart : AnAction(){
+  /**
+   * Performs the action of moving to the previous word start.
+   * 
+   * The method starts from the character before the current position, identifies its type,
+   * then moves backward through characters of the same type to find the start of the previous word.
+   *
+   * @param e The action event containing context information
+   */
   override fun actionPerformed(e: AnActionEvent) {
     val components = getEditorComponents(e.project!!)?: return
     val (caretModel, _, selectionModel, text) = components

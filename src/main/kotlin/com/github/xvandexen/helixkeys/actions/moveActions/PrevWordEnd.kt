@@ -7,10 +7,23 @@ import com.github.xvandexen.helixkeys.services.commands.CommandExecutor
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
+/**
+ * Action that moves the caret to the end of the previous word.
+ * 
+ * This action implements the Helix editor's "ge" command, which moves the cursor
+ * to the end of the previous word. It also selects the text between the current
+ * position and the previous word end.
+ */
 class PrevWordEnd : AnAction() {
+  /**
+   * Performs the action of moving to the previous word end.
+   * 
+   * The method starts from the character before the current position, identifies its type,
+   * then moves backward through characters of the same type to find the end of the previous word.
+   *
+   * @param e The action event containing context information
+   */
   override fun actionPerformed(e: AnActionEvent) {
-
-
     val components = getEditorComponents(e.project!!)?: return
     val (caretModel, _, selectionModel, text) = components
     var currentPosition = caretModel.offset - 1
@@ -29,15 +42,10 @@ class PrevWordEnd : AnAction() {
     // Stop after reaching the end of the previous word
     val wordEnd = currentPosition + 1
 
-
     // Ensure the selection and caret update appropriately
     if (wordEnd < caretModel.offset) {
       selectionModel.setSelection(wordEnd, caretModel.offset)
       caretModel.moveToOffset(wordEnd)
     }
-
-
   }
 }
-
-

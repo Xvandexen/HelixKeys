@@ -9,7 +9,24 @@ import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 
+/**
+ * Action that selects all references to the symbol under the cursor in the current file.
+ * 
+ * This action implements the Helix editor's "gs" command, which creates multiple
+ * selections for all occurrences of the symbol under the cursor. It uses IntelliJ's
+ * PSI (Program Structure Interface) to find references to the symbol, ensuring that
+ * only actual references are selected, not just text matches.
+ */
 class SelectReferencesToSymbolUnderCursor: AnAction() {
+  /**
+   * Performs the action of selecting all references to the symbol under the cursor.
+   * 
+   * The method finds the PSI element under the cursor, searches for all references to it
+   * in the current file, and creates multiple selections for each reference. It ensures
+   * that the original element is included in the selections.
+   *
+   * @param e The action event containing context information
+   */
   override fun actionPerformed(e: AnActionEvent) {
     val editor = FileEditorManager.getInstance(e.project!!).selectedTextEditor ?: return
     val project = e.project!!
