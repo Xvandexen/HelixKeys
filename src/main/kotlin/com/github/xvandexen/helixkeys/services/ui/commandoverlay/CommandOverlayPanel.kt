@@ -1,6 +1,7 @@
 package com.github.xvandexen.helixkeys.services.ui.commandoverlay
 
 import com.github.xvandexen.helixkeys.services.configuration.KeyBindingConfig
+import com.github.xvandexen.helixkeys.services.configuration.KeyBindingConfig.toFormattedString
 import com.github.xvandexen.helixkeys.services.configuration.KeyCombo
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Editor
@@ -93,7 +94,7 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
       val bindingPanel = JBPanel<JBPanel<*>>(BorderLayout(5, 0))
       bindingPanel.isOpaque = false
 
-      val keyLabel = JBLabel("$key:     ")
+      val keyLabel = JBLabel("${key.toFormattedString()}:     ")
       keyLabel.foreground = JBColor.BLUE
       keyLabel.font = JBUI.Fonts.label().asBold()
       bindingPanel.add(keyLabel, BorderLayout.WEST)

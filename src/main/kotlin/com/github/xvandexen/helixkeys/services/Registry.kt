@@ -9,6 +9,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Service(Service.Level.PROJECT)
 class Registry(private val project: Project) {
   data class Register(
+    var mainYankReg: String = "",
+    var userYankReg: MutableMap<Char, String> = mutableMapOf(),
     var anchor: Int? = null,
     val selectionHistory: MutableList<Pair<Int,Int>> = mutableListOf()
   ) {

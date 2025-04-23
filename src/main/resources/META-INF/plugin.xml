@@ -10,63 +10,72 @@
     <actions>
         <action id="HelixKeys.Replace"
                 class="com.github.xvandexen.helixkeys.actions.editActions.ReplaceAction"
-                text="Replace with Character"
-                description="Replace characters in selection with character"/>
+        />
 
         <action id="HelixKeys.SwitchCase"
                 class="com.github.xvandexen.helixkeys.actions.editActions.SwitchCaseAction"
-                text="Switch Case"
-                description="Switches the case of characters in selection"/>
+        />
 
         <action id="HelixKeys.PrevWordEnd"
-                class="com.github.xvandexen.helixkeys.actions.moveActions.PrevWordEnd" text="Prev Word End"
-                description="Moves to the Prior words end selection everything between the cursor and it"/>
+                class="com.github.xvandexen.helixkeys.actions.moveActions.PrevWordEnd"
+        />
 
         <action id="HelixKeys.PrevWordStart" class="com.github.xvandexen.helixkeys.actions.moveActions.PrevWordStart"
-                text="Prev Word Start" description="Moves to the prior words start"/>
+        />
 
         <action id="HelixKeys.NextWordStart" class="com.github.xvandexen.helixkeys.actions.moveActions.NextWordStart"
-                text="Next Word Start" description="Moves to the start of the next word selecting"/>
+        />
 
-        <action id="HelixKeys.NextWordEnd" class="com.github.xvandexen.helixkeys.actions.moveActions.NextWordEnd"
-                text="Next Word End" description="Moves to the next end of a word selecting"/>
+        <action id="HelixKeys.NextWordEnd" class="com.github.xvandexen.helixkeys.actions.moveActions.NextWordEnd"/>
 
         <action id="HelixKeys.LongNextWordStart"
-                class="com.github.xvandexen.helixkeys.actions.moveActions.LongNextWordStart"
-                text="Select to Long Next Word Start"
-                description="Selects and moves the cursor to the next word start including non alpha chars as part of a word"/>
+                class="com.github.xvandexen.helixkeys.actions.moveActions.LongNextWordStart"/>
         <action id="HelixKeys.LongPrevWordStart"
-                class="com.github.xvandexen.helixkeys.actions.moveActions.LongPrevWordStart"
-                text="Select to next long word Start"
-                description="Selects to the start of the next word, includes non-alphanumeric chars"/>
+                class="com.github.xvandexen.helixkeys.actions.moveActions.LongPrevWordStart"/>
         <action id="HelixKeys.SelectReferencesToSymbolUnderCursor"
-                class="com.github.xvandexen.helixkeys.actions.selectionActions.SelectReferencesToSymbolUnderCursor"
-                text="Select Refrences to Symbol under Cursor"
-                description="Selects, highlights and places a cursor under all symbols."/>
+                class="com.github.xvandexen.helixkeys.actions.selectionActions.SelectReferencesToSymbolUnderCursor"/>
         <action id="HelixKeys.CopySelectionPrevLine"
-                class="com.github.xvandexen.helixkeys.actions.selectionActions.CopySelectionPrevLine"
-                text="Copy Selection on Prev Line"
-                description="Creates a Cursor on the prev line with selection at same columns"/>
+                class="com.github.xvandexen.helixkeys.actions.selectionActions.CopySelectionPrevLine"/>
         <action id="HelixKeys.CopySelectionNextLine"
                 class="com.github.xvandexen.helixkeys.actions.selectionActions.CopySelectionNextLine"
-                text="Copy Selection To Next Line"
-                description="Creates a Caret on the next line in the same pos as current selection"/>
+        />
         <action id="HelixKeys.InsertMode" class="com.github.xvandexen.helixkeys.actions.modeSwitchingActions.InsertMode"
-                text="Insert Mode" description="Switches to Insert Mode"/>
+        />
         <action id="HelixKeys.NormalMode" class="com.github.xvandexen.helixkeys.actions.modeSwitchingActions.NormalMode"
-                text="Normal Mode" description="Switches to Normal Mode"/>
+        />
         <action id="HelixKeys.SelectMode" class="com.github.xvandexen.helixkeys.actions.modeSwitchingActions.SelectMode"
-                text="Select Mode" description="Switches To Select Mode"/>
+        />
         <action id="HelixKeys.ExtendLine" class="com.github.xvandexen.helixkeys.actions.extendActions.ExtendLine"
-                text="Extend Line" description="Extends Line in Direction Of Anchor"/>
+        />
+        <action id="HelixKeys.ExtendLineBelow"
+                class="com.github.xvandexen.helixkeys.actions.extendActions.ExtendLineBelow"
+        />
+        <action id="HelixKeys.FindNextChar" class="com.github.xvandexen.helixkeys.actions.findActions.FindNextChar"
+        />
+
+        <action id="HelixKeys.FindPrevChar" class="com.github.xvandexen.helixkeys.actions.findActions.FindPrevChar"/>
+        <action id="HelixKeys.FindTillNextChar"
+                class="com.github.xvandexen.helixkeys.actions.findActions.FindTillNextChar"
+        />
+        <action id="HelixKeys.FindTillPrevChar"
+                class="com.github.xvandexen.helixkeys.actions.findActions.FindTillPrevChar"
+        />
+        <action id="HelixKeys.SwitchToUpper" class="com.github.xvandexen.helixkeys.actions.editActions.SwitchToUpper"
+                text="Switch "/>
+        <action id="HelixKeys.SwitchToLower" class="com.github.xvandexen.helixkeys.actions.editActions.SwitchToLower"
+                text="Switch To LowerCase" description="Converts the selection to lowercase"/>
+        <action id="HelixKeys.ExtendLineAbove"
+                class="com.github.xvandexen.helixkeys.actions.extendActions.ExtendLineAbove" text="Extend Line Above"
+                description="Select current line, if already selected, extend to previous line"/>
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.github.xvandexen.helixkeys.startup.ModeAwareActivity"/>
 
-        <statusBarWidgetFactory implementation="com.github.xvandexen.helixkeys.services.ui.statusbar.HelixKeysStatusBarWidgetFactory"
-                                id="HelixKeys.StatusWidget"
-                                order="first"/>
+        <statusBarWidgetFactory
+                implementation="com.github.xvandexen.helixkeys.services.ui.statusbar.HelixKeysStatusBarWidgetFactory"
+                id="HelixKeys.StatusWidget"
+                order="first"/>
         <notificationGroup id="Helixkeys Notifications" displayType="BALLOON"/>
 
     </extensions>

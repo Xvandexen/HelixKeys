@@ -6,7 +6,7 @@ import com.github.xvandexen.helixkeys.services.commands.CommandExecutor
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
-class FindTIllNextChar : AnAction(){
+class FindTillNextChar : AnAction(){
   override fun actionPerformed(e: AnActionEvent) {
     val executor = CommandExecutor.getInstance(e.project!!)
     setupCharacterFinder(executor, FindType.TILL_NEXT)
