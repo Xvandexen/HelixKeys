@@ -54,8 +54,7 @@ class ModalKeyManager(
     // Use Application.invokeLater to ensure UI is ready
     activeKeyCordMap = normalModeBindings
 
-    // Add a delay to ensure the IDE is fully initialized
-    ApplicationManager.getApplication().invokeLater {
+
       IdeEventQueue.getInstance().addDispatcher({ event ->
         if (event is KeyEvent && keyInterruptActive) {
 
@@ -65,12 +64,13 @@ class ModalKeyManager(
           false
         }
       }, this)
-    }
+
     thisLogger().info("NormalBindings = $normalModeBindings")
     thisLogger().info("InsertBindings = $insertModeBindings")
     thisLogger().info("SelectBindings = $selectModeBindings")
   }
 
+  
 
 
 
@@ -83,7 +83,7 @@ class ModalKeyManager(
 
     val focusedComponent = IdeFocusManager.getInstance(project).focusOwner
     val editors = EditorFactory.getInstance().allEditors
-    if (editors.any { it.contentComponent !== focusedComponent }){
+    if (editors.none { it.contentComponent === focusedComponent }){
       return false
     }
 

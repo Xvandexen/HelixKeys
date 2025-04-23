@@ -10,7 +10,8 @@ class LongNextWordStart :AnAction() {
   override fun actionPerformed(e: AnActionEvent) {
 
       val components = getEditorComponents(e.project!!)?: return
-      val (caretModel, _, _, text) = components
+      val (caretModel, _, selectionModel, text) = components
+
       val currentPosition = caretModel.offset
 
       var newOffset = currentPosition
@@ -24,6 +25,7 @@ class LongNextWordStart :AnAction() {
       }
 
       if (newOffset != currentPosition) {
+        selectionModel.setSelection(currentPosition, newOffset)
         caretModel.moveToOffset(newOffset)
       }
     }

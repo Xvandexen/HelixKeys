@@ -23,7 +23,7 @@
                 description="Moves to the Prior words end selection everything between the cursor and it"/>
 
         <action id="HelixKeys.PrevWordStart" class="com.github.xvandexen.helixkeys.actions.moveActions.PrevWordStart"
-                text="Prev Word Start" description="Moves to the Prior Words Start"/>
+                text="Prev Word Start" description="Moves to the prior words start"/>
 
         <action id="HelixKeys.NextWordStart" class="com.github.xvandexen.helixkeys.actions.moveActions.NextWordStart"
                 text="Next Word Start" description="Moves to the start of the next word selecting"/>
@@ -35,8 +35,7 @@
                 class="com.github.xvandexen.helixkeys.actions.moveActions.LongNextWordStart"
                 text="Select to Long Next Word Start"
                 description="Selects and moves the cursor to the next word start including non alpha chars as part of a word"/>
-
-        <action id="HelixActions.LongPrevWordStart"
+        <action id="HelixKeys.LongPrevWordStart"
                 class="com.github.xvandexen.helixkeys.actions.moveActions.LongPrevWordStart"
                 text="Select to next long word Start"
                 description="Selects to the start of the next word, includes non-alphanumeric chars"/>
@@ -62,6 +61,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="com.github.xvandexen.helixkeys.startup.ModeAwareActivity"/>
+
         <statusBarWidgetFactory implementation="com.github.xvandexen.helixkeys.services.ui.statusbar.HelixKeysStatusBarWidgetFactory"
                                 id="HelixKeys.StatusWidget"
                                 order="first"/>

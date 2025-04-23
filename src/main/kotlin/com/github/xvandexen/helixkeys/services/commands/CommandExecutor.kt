@@ -8,6 +8,7 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileEditorManager
 
 import com.intellij.openapi.project.Project
@@ -45,8 +46,8 @@ class CommandExecutor(val project: Project): Disposable {
     MOVE_NEXT_WORD_END(  "HelixKeys.NextWordEnd"),
     MOVE_PREV_WORD_END("HelixKeys.PrevWordEnd"),
 
-    MOVE_NEXT_LONG_WORD_START( "HelixKeys.NextLongWordStart"),
-    MOVE_PREV_LONG_WORD_START( "HelixKeys.PrevLongWordStart"),
+    MOVE_NEXT_LONG_WORD_START( "HelixKeys.LongNextWordStart"),
+    MOVE_PREV_LONG_WORD_START( "HelixKeys.LongPrevWordStart"),
     MOVE_NEXT_LONG_WORD_END(""),
     MOVE_PREV_LONG_WORD_END(""),
 
@@ -369,10 +370,11 @@ class CommandExecutor(val project: Project): Disposable {
 
     fun executeActionById(actionId: String) {
       val action = ActionManager.getInstance().getAction(actionId)
-
       val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
       val dataContext = DataManager.getInstance().getDataContext(editor.component)
       val event = AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, dataContext)
+
+
       action.actionPerformed(event)
     }
 
