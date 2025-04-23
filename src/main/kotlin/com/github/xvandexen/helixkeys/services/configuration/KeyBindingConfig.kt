@@ -8,22 +8,61 @@ import com.github.xvandexen.helixkeys.services.commands.CommandExecutor.HelixCom
 import com.github.xvandexen.helixkeys.services.functionaltity.ModeManager
 import com.github.xvandexen.helixkeys.services.utilities.NotificationErrorHandling
 
-// Updated KeyCombo to use a character code, rather than Set<Int>
+/**
+ * Represents a key combination consisting of a character and its modifiers.
+ * 
+ * This typealias pairs a character (the key) with modifiers (Ctrl, Alt, Meta)
+ * to represent keyboard shortcuts in the Helix-style key binding system.
+ */
 typealias KeyCombo = Pair<Char, KeyBindingConfig.Modifiers>
 
+/**
+ * Object responsible for loading and parsing key binding configurations.
+ * 
+ * This object handles loading key binding configurations from TOML files,
+ * parsing them into a structured format, and providing access to the key bindings
+ * for different editor modes.
+ */
 object KeyBindingConfig {
 
+  /**
+   * Data class representing key modifiers.
+   * 
+   * This class tracks which modifier keys (Control, Meta/Command, Alt) are active
+   * for a key combination.
+   *
+   * @property control Whether the Control key is active
+   * @property meta Whether the Meta/Command key is active
+   * @property alt Whether the Alt key is active
+   */
   data class Modifiers(var control: Boolean = false, var meta: Boolean = false, var alt: Boolean = false)
 
-  // Updated RecKeyBinding to use KeyCombo instead of Set<Int>
+  /**
+   * Data class representing a recursive key binding.
+   * 
+   * This class can represent either a direct command binding or a nested set of bindings
+   * that form a key sequence (e.g., "g" followed by "g" to go to the beginning of the file).
+   *
+   * @property command The command to execute when this binding is activated, or null if this is a parent binding
+   * @property subBindings Map of sub-bindings for key sequences, or null if this is a leaf binding
+   */
   data class RecKeyBinding(
     val command: HelixCommand? = null,
     val subBindings: Map<KeyCombo, RecKeyBinding>? = null,
   )
 
+  /**
+   * Logger instance for this class.
+   */
   private val logger = thisLogger()
 
-  // Updated to map strings to characters
+  /**
+   * Map of special key names to their character representations.
+   * 
+   * This map associates human-readable key names (like "escape", "enter", "space")
+   * with their character representations. For standard keys, this uses the actual
+   * character codes. For special keys like arrows, it uses custom Unicode code points.
+   */
   private val specialKeyNames = mapOf(
       "escape" to '\u001B',
       "enter" to '\n',
@@ -40,6 +79,14 @@ object KeyBindingConfig {
       "home" to '\uE005'
     )
 
+  /**
+   * Formats a KeyCombo as a human-readable string.
+   * 
+   * This extension function converts a key combination to a string representation
+   * with modifiers prefixed (e.g., "C-A-x" for Ctrl+Alt+x).
+   *
+   * @return A string representation of the key combination
+   */
   fun KeyCombo.toFormattedString(): String {
     val (char, modifiers) = this
     val prefix = StringBuilder()
@@ -51,6 +98,15 @@ object KeyBindingConfig {
     return prefix.toString() + char
   }
 
+  /**
+   * Loads key binding configuration from a TOML file.
+   * 
+   * This method attempts to load the key binding configuration from a TOML file
+   * located at the OS-specific configuration path. If the file doesn't exist or
+   * can't be parsed, it returns an empty map and logs an error.
+   *
+   * @return A mutable map associating editor modes with their key bindings
+   */
   fun loadConfig(): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
     val mapper = tomlMapper {}
     val configFile = ConfigPaths("helixkeys_keybinding.toml", "helixkeys").getOsSpecificConfigPath().toFile()
@@ -76,16 +132,23 @@ object KeyBindingConfig {
       // Still log for debugging purposes
       logger.error("Failed to parse config file", e)
 
-      // Return empty map or default configuration
+      // Return emptymap or default configuration
       return mutableMapOf()
-
     }
   }
 
-
+  /**
+   * Converts a string representation of a key to a KeyCombo object.
+   * 
+   * This method parses a string like "C-A-x" (Ctrl+Alt+x) into a KeyCombo object
+   * with the appropriate character and modifiers. It handles special key names
+   * and control characters.
+   *
+   * @param keys The string representation of the key combination
+   * @return A KeyCombo object representing the key combination
+   */
   private fun getKeyCodeFromString(keys: String): KeyCombo {
     val modifiers = Modifiers()
-
 
     modifiers.control = keys.contains("C-")
     modifiers.meta = keys.contains("M-")
@@ -95,14 +158,12 @@ object KeyBindingConfig {
         .replace("M-", "")
         .replace("A-", "")
 
-
     // Get the main key character
     val keyChar: Char = when {
       cleanKey.length == 1 && modifiers.control-> (cleanKey[0].lowercaseChar() - 96)
       cleanKey.length == 1 -> cleanKey[0]
       specialKeyNames.containsKey(cleanKey) ->
         specialKeyNames[cleanKey] ?: '\u0000'
-
 
       else -> {
         logger.warn("Unknown key: $cleanKey")
@@ -114,6 +175,16 @@ object KeyBindingConfig {
   }
 
 
+  /**
+   * Parses key bindings from the TOML configuration structure.
+   * 
+   * This method processes the top-level structure of the TOML configuration,
+   * handling different editor modes (normal, insert, select) and creating
+   * a map of key combinations to their corresponding commands or sub-bindings.
+   *
+   * @param map The parsed TOML configuration as a nested map structure
+   * @return A mutable map associating editor modes with their key bindings
+   */
   private fun parseKeyBindings(map: Map<String, Map<String, Map<String, Any>>>): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
     val result = mutableMapOf<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>>()
 
@@ -220,8 +291,17 @@ object KeyBindingConfig {
   }
     // Add more debug logging
 
-  // Helper method to parse nested bindings
-  // Updated to use KeyCombo instead of Char
+  /**
+   * Helper method to parse nested bindings for complex key sequences.
+   * 
+   * This method recursively processes nested key bindings, allowing for
+   * complex key sequences like "g" followed by "g" to go to the beginning of the file.
+   * It converts string keys to KeyCombo objects and handles both direct command bindings
+   * and further nested bindings.
+   *
+   * @param map The map of key strings to either command strings or nested binding maps
+   * @return A map of KeyCombo objects to their corresponding RecKeyBinding objects
+   */
   private fun parseNestedBindings(map: Map<String, Any>): Map<KeyCombo, RecKeyBinding> {
     val result = mutableMapOf<KeyCombo, RecKeyBinding>()
 

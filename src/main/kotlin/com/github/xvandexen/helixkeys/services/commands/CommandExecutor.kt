@@ -13,12 +13,29 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 
+/**
+ * Service responsible for executing Helix editor commands within the IntelliJ environment.
+ * 
+ * This class acts as a bridge between Helix-style commands and IntelliJ's action system,
+ * allowing users to use Helix keybindings and commands in the IDE.
+ *
+ * @property project The current project instance
+ */
 @Service(Service.Level.PROJECT)
 class CommandExecutor(val project: Project): Disposable {
+  /**
+   * Stores the last executed command for potential repetition
+   */
   private val lastCommand: HelixCommand? = null
 
-
-
+  /**
+   * Enumeration of all supported Helix editor commands.
+   * 
+   * Each command is mapped to a corresponding IntelliJ action ID that will be executed
+   * when the command is invoked. Empty action IDs indicate commands that are not yet implemented.
+   *
+   * @property actionId The IntelliJ action ID associated with this command
+   */
   enum class HelixCommand(val actionId : String) {
 
     //Movement
@@ -169,7 +186,7 @@ class CommandExecutor(val project: Project): Disposable {
     GOTO_NEXT_CHANGE( "JumpToNextChange"),
     GOTO_FIRST_CHANGE( ""), //TODO Custom
     GOTO_LAST_CHANGE( ""), // TODO Custom
-    GOTOLINE_START( "EditorLineStart"),
+    GOTO_LINE_START( "EditorLineStart"),
     GOTO_LINE_END( "EditorLineEnd"),
     GOTO_NEXT_BUFFER( "NextEditorTab"),
     GOTO_PREVIOUS_BUFFER( "PreviousEditorTab"),
@@ -189,13 +206,13 @@ class CommandExecutor(val project: Project): Disposable {
     DELETE_WORD_FORWARD( ""),
     KILL_TO_LINE_START( ""),
     KILL_TO_LINE_END( ""),
-    UNDO( ""),
-    REDO( ""),
+    UNDO( "\$Undo"),
+    REDO( "\$Redo"),
     EARLIER( ""),
     LATER( ""),
     COMIT_UNDO_CHECKPOINT( ""),
     YANK( ""),
-    YANK_TO_CLIPBOARD( ""),
+    YANK_TO_CLIPBOARD( "\$Copy"),
     YANK_TO_PRIMARY_CLIPBOARD( ""),
     YANK_JOINED( ""),
     YANK_JOINED_TO_CLIPBOARD( ""),
@@ -203,7 +220,7 @@ class CommandExecutor(val project: Project): Disposable {
     YANK_JOINED_TO_PRIMARY_CLIPBOARD( ""),
     YANK_MAIN_SELECTION_TO_PRIMARY_CLIPBOARD( ""),
 
-    REPLACE_WITH_YANKED( ""),
+    REPLACE_WITH_YANKED( "\$Paste"),
     REPLACE_SELECTIONS_WITH_CLIPBOARD( ""),
     REPLACE_SELECTIONS_WITH_PRIMARY_CLIPBOARD( ""),
     PASTE_AFTER( ""),
@@ -214,7 +231,7 @@ class CommandExecutor(val project: Project): Disposable {
     PASTE_PRIMARY_CLIPBOARD_BEFORE( ""),
     INDENT( ""),
     UNINDENT( ""),
-    FORMAT_SELECTIONS( ""),
+    FORMAT_SELECTIONS( "ReformatCode"),
     JOIN_SELECTIONS( ""),
     JOIN_SELECTIONS_SPACE( ""),
     KEEP_SELECTIONS( ""),
@@ -224,9 +241,9 @@ class CommandExecutor(val project: Project): Disposable {
     REMOVE_PRIMARY_SELECTION( ""),
     COMPLETION( ""),
     HOVER( ""),
-    TOGGLE_COMMENTS( ""),
-    TOGGLE_LINE_COMMENTS( ""),
-    TOGGLE_BLOCK_COMMENTS( ""),
+    TOGGLE_COMMENTS( "CommentByLineComment"),
+    TOGGLE_LINE_COMMENTS( "CommentByLineComment"),
+    TOGGLE_BLOCK_COMMENTS( "CommentByBlockComment"),
     ROTATE_SELECTIONS_FORWARD( ""),
     ROTATE_SELECTIONS_BACKWARD( ""),
     ROTATE_SELECTION_CONTENTS_FORWARD( ""),
@@ -320,10 +337,10 @@ class CommandExecutor(val project: Project): Disposable {
 
 
 
-    //Changes
+    //TODO Order these
 
 
-    INSERT_MODE("HelixKeys.InsertMode"),
+    INSERT_MODE("HelixKeys.InsertMode"),//TODO Custom Action
     APPEND_MODE(""),
     INSERT_AT_LINE_START(""),
 
@@ -358,40 +375,71 @@ class CommandExecutor(val project: Project): Disposable {
 
     MOVE_PARENT_NODE_END(""),
     MOVE_PARENT_NODE_START(""),
-    
+
 
 
 
   }
 
+  /**
+   * Executes a Helix command by invoking the corresponding IntelliJ action.
+   *
+   * @param command The Helix command to execute
+   * @param args Optional arguments for the command (currently unused)
+   */
   fun executeCommand(command: HelixCommand, args: Any? = null) {
     executeActionById(command.actionId)
   }
 
+  /**
+   * Executes an IntelliJ action by its ID.
+   *
+   * This method retrieves the action from ActionManager, gets the current editor,
+   * creates a data context, and performs the action.
+   *
+   * @param actionId The ID of the IntelliJ action to execute
+   */
+  fun executeActionById(actionId: String) {
+    val action = ActionManager.getInstance().getAction(actionId)
+    val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+    val dataContext = DataManager.getInstance().getDataContext(editor.component)
+    val event = AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, dataContext)
 
-    fun executeActionById(actionId: String) {
-      val action = ActionManager.getInstance().getAction(actionId)
-      val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
-      val dataContext = DataManager.getInstance().getDataContext(editor.component)
-      val event = AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, dataContext)
+    action.actionPerformed(event)
+  }
 
-
-      action.actionPerformed(event)
-    }
-
+  /**
+   * Disposes of resources used by this service.
+   * 
+   * This method is called when the service is being shut down.
+   */
   override fun dispose() {
     Disposer.dispose(this)
   }
 
+  /**
+   * Executes a Helix command multiple times.
+   *
+   * @param numTimes The number of times to execute the command as a string
+   * @param command The Helix command to execute
+   * @param args Optional arguments for the command (currently unused)
+   */
   fun executeCommandXTimes(numTimes: String, command: HelixCommand, args: Any? = null) {
-    for (i in 1..numTimes.toInt()){
-
-    executeActionById(command.actionId)
+    for (i in 1..numTimes.toInt()) {
+      executeActionById(command.actionId)
     }
-
   }
 
+  /**
+   * Companion object providing access to the CommandExecutor service instance.
+   */
   companion object {
+    /**
+     * Gets the CommandExecutor service instance for the specified project.
+     *
+     * @param project The project for which to get the CommandExecutor service
+     * @return The CommandExecutor service instance
+     */
     @JvmStatic
     fun getInstance(project: Project): CommandExecutor = project.service()
   }

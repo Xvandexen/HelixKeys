@@ -7,7 +7,22 @@ import com.github.xvandexen.helixkeys.services.commands.CommandExecutor
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
+/**
+ * Action that moves the caret to the end of the next word.
+ * 
+ * This action implements the Helix editor's "e" command, which moves the cursor
+ * to the end of the next word. It also selects the text between the current
+ * position and the next word end.
+ */
 class NextWordEnd: AnAction() {
+  /**
+   * Performs the action of moving to the next word end.
+   * 
+   * The method identifies the current character type (letter, whitespace, or other),
+   * then moves past all characters of the same type to find the end of the next word.
+   *
+   * @param e The action event containing context information
+   */
   override fun actionPerformed(e: AnActionEvent) {
       val components = getEditorComponents(e.project!!)?: return
       val (caretModel, _, selectionModel, text) = components

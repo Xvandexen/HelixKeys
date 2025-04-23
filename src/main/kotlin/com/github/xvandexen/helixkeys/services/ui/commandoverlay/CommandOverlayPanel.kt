@@ -22,15 +22,31 @@ import com.intellij.ui.scale.JBUIScale
 import javax.swing.event.MouseInputAdapter
 
 /**
- * CommandOverlayPanel that displays available key bindings in the editor
- * without interfering with editor interaction
+ * UI component that displays available key bindings in the editor.
+ * 
+ * This panel shows a semi-transparent overlay in the editor with available
+ * key bindings and their corresponding commands. It's designed to be non-intrusive,
+ * passing all mouse events through to the editor underneath.
+ *
+ * @property project The current project instance
  */
 class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlayPanel>(BorderLayout()), Disposable {
 
+  /**
+   * Flag indicating whether the panel is currently visible.
+   */
   private var isVisible = false
+
+  /**
+   * Logger instance for this class.
+   */
   private val LOG = Logger.getInstance(CommandOverlayPanel::class.java)
+
+  /**
+   * Reference to the current layered pane that contains this panel.
+   */
   private var currentLayeredPane: JLayeredPane? = null
-  
+
   init {
     // Make panel semi-transparent with a border
     background = JBColor(Color(40, 40, 40, 200), Color(60, 60, 60, 200))
@@ -44,7 +60,11 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
   }
 
   /**
-   * A mouse listener that passes all events through to components below
+   * A mouse listener that passes all events through to components below.
+   * 
+   * This listener consumes all mouse events without processing them,
+   * effectively making the panel transparent to mouse interactions.
+   * This allows the user to interact with the editor underneath the overlay.
    */
   private inner class PassthroughMouseListener : MouseInputAdapter() {
     override fun mouseClicked(e: MouseEvent) = e.consume()
@@ -57,14 +77,27 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
   }
 
   /**
-   * Override to ensure mouse events are ignored and passed through
+   * Overrides the contains method to make the panel transparent to mouse events.
+   * 
+   * By always returning false, this method ensures that the panel never
+   * captures mouse events, allowing them to pass through to components below.
+   *
+   * @param x The x coordinate
+   * @param y The y coordinate
+   * @return Always false to pass events through
    */
   override fun contains(x: Int, y: Int): Boolean {
     return false // Always return false to pass events through
   }
 
   /**
-   * Updates the panel with new bindings and shows it
+   * Updates the panel with new bindings and shows it.
+   * 
+   * This method populates the panel with the provided key bindings,
+   * attaches it to the current editor if needed, and makes it visible.
+   * It ensures the operation is performed on the EDT.
+   *
+   * @param subBindings The map of key combinations to their corresponding bindings
    */
   fun showBindings(subBindings: Map<KeyCombo, KeyBindingConfig.RecKeyBinding>) {
     if (ApplicationManager.getApplication().isDispatchThread) {
@@ -128,7 +161,10 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
   }
 
   /**
-   * Hides the panel
+   * Hides the panel and removes it from the layered pane.
+   * 
+   * This method makes the panel invisible and removes it from its parent
+   * layered pane. It ensures the operation is performed on the EDT.
    */
   fun hidePanel() {
     if (ApplicationManager.getApplication().isDispatchThread) {
@@ -138,10 +174,16 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
     }
   }
 
+  /**
+   * Performs the actual hiding of the panel.
+   * 
+   * This method sets the panel to invisible, removes it from its parent
+   * layered pane, and clears the reference to the current layered pane.
+   */
   private fun performHide() {
     isVisible = false
     setVisible(false)
-    
+
     // Remove from layered pane if attached
     val parent = parent
     if (parent is JLayeredPane) {
@@ -153,22 +195,31 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
   }
 
   /**
-   * Updates the position of the panel in the current editor
+   * Updates the position of the panel in the current editor.
+   * 
+   * This method positions the panel in the bottom right corner of the
+   * visible area of the editor, with some padding.
    */
   private fun updatePosition() {
     val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
     val visibleRect = editor.scrollingModel.visibleArea
-    
+
     // Position in bottom right with some padding
     val padding = JBUIScale.scale(20)
     val x = visibleRect.x + visibleRect.width - width - padding
     val y = visibleRect.y + visibleRect.height - height - padding
-    
+
     setBounds(x, y, width, height)
   }
 
   /**
-   * Attaches the panel to the editor's layered pane
+   * Attaches the panel to the editor's layered pane.
+   * 
+   * This method finds the layered pane associated with the editor,
+   * removes the panel from its current parent if needed, and adds it
+   * to the new layered pane in the popup layer.
+   *
+   * @param editor The editor to attach the panel to
    */
   private fun attachToEditor(editor: Editor) {
     val layeredPane = findLayeredPane(editor.component)
@@ -180,11 +231,11 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
         if (parent is JLayeredPane) {
           parent.remove(this)
         }
-        
+
         // Add to new layered pane
         layeredPane.add(this, JLayeredPane.POPUP_LAYER)
         currentLayeredPane = layeredPane
-        
+
         // Make sure size is calculated
         setSize(preferredSize)
       }
@@ -194,17 +245,29 @@ class CommandOverlayPanel(private val project: Project) : JBPanel<CommandOverlay
   }
 
   /**
-   * Finds a JLayeredPane ancestor for the component
+   * Finds a JLayeredPane ancestor for the component.
+   * 
+   * This method recursively searches up the component hierarchy
+   * to find a JLayeredPane ancestor.
+   *
+   * @param component The component to find a layered pane for
+   * @return The JLayeredPane ancestor, or null if none is found
    */
   private fun findLayeredPane(component: Component): JLayeredPane? {
     if (component is JLayeredPane) {
       return component
     }
-    
+
     val parent = component.parent ?: return null
     return findLayeredPane(parent)
   }
 
+  /**
+   * Disposes of resources used by this panel.
+   * 
+   * This method is called when the panel is being shut down.
+   * It hides the panel and removes it from its parent.
+   */
   override fun dispose() {
     hidePanel()
   }

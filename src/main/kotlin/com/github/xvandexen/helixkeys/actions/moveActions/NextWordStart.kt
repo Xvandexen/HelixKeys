@@ -7,11 +7,25 @@ import com.github.xvandexen.helixkeys.services.commands.CommandExecutor
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
+/**
+ * Action that moves the caret to the start of the next word.
+ * 
+ * This action implements the Helix editor's "w" command, which moves the cursor
+ * to the beginning of the next word. It also selects the text between the current
+ * position and the next word start.
+ */
 class NextWordStart : AnAction() {
 
-
+  /**
+   * Performs the action of moving to the next word start.
+   * 
+   * The method identifies the current character type (letter, whitespace, or other),
+   * then moves past all characters of the same type, and finally past any whitespace
+   * to reach the start of the next word.
+   *
+   * @param e The action event containing context information
+   */
   override fun actionPerformed(e: AnActionEvent) {
-
     val components = getEditorComponents(e.project!!)?: return
     val (caretModel, _, selectionModel, text) = components
     val currentPosition = caretModel.offset
@@ -34,8 +48,5 @@ class NextWordStart : AnAction() {
       selectionModel.setSelection(currentPosition, nextPosition)
       caretModel.moveToOffset(nextPosition)
     }
-
   }
-
-
 }

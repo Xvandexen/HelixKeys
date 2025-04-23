@@ -9,18 +9,36 @@ import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import kotlin.math.min
 
+/**
+ * Utility object providing methods for handling selection operations in the editor.
+ * 
+ * This object contains functionality for selecting PSI elements and finding
+ * referenceable targets that are used by various selection actions.
+ */
 object SelectionActions {
 
-
-
-
-
-  // Helper function to select a single element
+  /**
+   * Selects a single PSI element in the editor.
+   * 
+   * This method sets the primary caret's selection to cover the text range of the specified element.
+   *
+   * @param editor The editor in which to make the selection
+   * @param element The PSI element to select
+   */
   fun selectElement(editor: Editor, element: PsiElement) {
     val range = element.textRange
     editor.caretModel.primaryCaret.setSelection(range.startOffset, range.endOffset)
   }
 
+  /**
+   * Finds a referenceable target for a PSI element.
+   * 
+   * This method traverses up the PSI tree from the given element, looking for a named element
+   * that can be referenced. It also attempts to resolve references if the element is a reference.
+   *
+   * @param element The PSI element to find a referenceable target for
+   * @return A referenceable PSI element, or null if none is found
+   */
   fun findReferenceTarget(element: PsiElement): PsiElement? {
     var current: PsiElement? = element
 
@@ -45,6 +63,3 @@ object SelectionActions {
     return null
   }
 }
-
-
-
