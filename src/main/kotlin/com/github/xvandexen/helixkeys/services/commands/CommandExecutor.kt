@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.fileEditor.FileEditorManager
 
 import com.intellij.openapi.project.Project
@@ -38,7 +37,7 @@ class CommandExecutor(val project: Project): Disposable {
     EXTEND_VISUAL_LINE_UP("EditorUpWithSelection"),
     EXTEND_VISUAL_LINE_DOWN("EditorDownWithSelection"),
 
-    COPY_SELECTION_ON_NEXT_LINE( "HelixKeys.CopySelectionNextLine(x)"),
+    COPY_SELECTION_ON_NEXT_LINE( "HelixKeys.CopySelectionNextLine"),
     COPY_SELECTION_ON_PREV_LINE(  "HelixKeys.CopySelectionPrevLine"),
 
     MOVE_NEXT_WORD_START(  "HelixKeys.NextWordStart"),
@@ -83,14 +82,14 @@ class CommandExecutor(val project: Project): Disposable {
     FIND_NEXT_CHAR(  "HelixKeys.FindNextChar"),
     EXTEND_NEXT_CHAR( ""),
     TILL_PREV_CHAR(  "HelixKeys.FindTillPrevChar"),
-    FIND_PREV_CHAR(  "HelixKeys.findPrevChar"),
+    FIND_PREV_CHAR(  "HelixKeys.FindPrevChar"),
     EXTEND_TILL_PREV_CHAR( ""),
     EXTEND_PREV_CHAR( ""),
     REPEAT_LAST_MOTION(""),
     REPLACE("HelixKeys.Replace"),
     SWITCH_CASE("HelixKeys.SwitchCase"),
-    SWITCH_TO_UPPERCASE(  "HelixKeys.UpperCase"),
-    SWITCH_TO_LOWERCASE(  "HelixKeys.LowerCase"),
+    SWITCH_TO_UPPERCASE(  "HelixKeys.SwitchToUpper"),
+    SWITCH_TO_LOWERCASE(  "HelixKeys.SwitchToLower"),
 
 
     PAGE_UP("EditorPageUp"),
@@ -102,7 +101,7 @@ class CommandExecutor(val project: Project): Disposable {
     PAGE_CURSOR_HALF_UP(""),
     PAGE_CURSOR_HALF_DOWN(""),
 
-    SELECT_ALL("EditorSelectAll"),
+    SELECT_ALL("\$SelectAll"),
     SELECT_REGEX(""),
     SPLIT_SELECTION(""),
     SPLIT_SELECTION_ON_NEWLINE(""),
@@ -120,7 +119,8 @@ class CommandExecutor(val project: Project): Disposable {
     GLOBAL_SEARCH(""),
 
     EXTEND_LINE( "HelixKeys.ExtendLine"),
-    EXTEND_LINE_ABOVE( ""),
+    EXTEND_LINE_ABOVE( "HelixKeys.ExtendLineAbove"),
+    EXTEND_LINE_BELOW("HelixKeys.ExtendLineBelow"),
     SELECT_LINE_ABOVE( ""),
     SELECT_LINE_BELOW( ""),
 
@@ -128,12 +128,12 @@ class CommandExecutor(val project: Project): Disposable {
     //TODO(Add own Picker popup)
     FILE_PICKER( "GotoFile"),
     FILE_PICKER_IN_CURRENT_BUFFER_DIRECTORY( ""),
-    FILE_PICKER_IN_CURRENT_DIRECTORY("ActivateProjectToolWindow"),
+    FILE_PICKER_IN_CURRENT_DIRECTORY("main.toolbar.Project"),
     CODE_ACTION( "ShowIntentionActions"),
     BUFFER_PICKER("RecentFiles"),
     JUMPLIST_PICKER( ""),
     SYMBOL_PICKER( "GotoSymbol"),
-    CHANGED_FILE_PICKER( "GotoChangedFiles"),
+    CHANGED_FILE_PICKER( "RecentChangedFiles"),
     SELECT_REFERENCES_TO_SYMBOL_UNDER_CURSOR(""),
     WORKSPACE_SYMBOL_PICKER( ""),
     DIAGNOSTICS_PICKER( ""),
@@ -141,7 +141,7 @@ class CommandExecutor(val project: Project): Disposable {
 
     NORMAL_MODE( "HelixKeys.NormalMode"),
     SELECT_MODE( "HelixKeys.SelectMode"),
-    EXIT_SELECT_MODE("HelixKeys.ExitSelectMode"),
+    //TODO EXIT_SELECT_MODE("HelixKeys.ExitSelectMode"),
 
     GOTO_DEFINITION( ""),
     GOTO_DECLARATION( ""),
@@ -149,29 +149,30 @@ class CommandExecutor(val project: Project): Disposable {
     ADD_NEWLINE_ABOVE( ""),
     ADD_NEW_LINE_BELOW( ""),
 
-    GOTO_TYPE_DEFINITION( ""),
-    GOTO_IMPLEMENTATION( ""),
-    GOTO_FILE_START( ""),
-    GOTO_FILE_END( ""),
-    GOTO_FILE( ""),
-    GOTO_FILE_HSPLIT( ""),
-    GTOTO_FILE_VSPLIT( ""),
-    GOTO_REFERENCES( ""),
-    GOTO_WINDOW_TOP( ""),
-    GTOTO_WINDOW_CENTER( ""),
-    GOTO_LAST_ACCESSED_FILE( ""),
-    GOTO_LAST_MODIFICATION( ""),
-    GOTO_LINE( ""),
-    GOTO_LAST_LINE( ""),
-    GOTO_FIRST_DIAG( ""),
-    GOTO_LAST_DIAG( ""),
-    GOTO_NEXT_CHANGE( ""),
-    GOTO_FIRST_CHANGE( ""),
-    GOTO_LAST_CHANGE( ""),
-    GOTOLINE_START( ""),
-    GOTO_LINE_END( ""),
-    GOTO_NEXT_BUFFER( ""),
-    GOTO_PREVIOUS_BUFFER( ""),
+    GOTO_TYPE_DEFINITION( "GotoTypeDeclaration"),
+    GOTO_IMPLEMENTATION( "GotoImplementation"),
+    GOTO_FILE_START( "EditorTextStart"),
+    GOTO_FILE_END( "EditorTextEnd"),
+    GOTO_FILE( "GotoFile"),
+    GOTO_FILE_HSPLIT( "OpenInRightSplit"),
+    GOTO_FILE_VSPLIT( "SplitVertically"),//TODO (custom Implemented)
+    GOTO_REFERENCES( "FindUsages"),
+    GOTO_WINDOW_TOP( "EditorScrollTop"),
+    GOTO_WINDOW_CENTER( "EditorScrollToCenter"),
+    GOTO_WINDOW_BOTTOM( "EditorScrollBottom"),
+    GOTO_LAST_ACCESSED_FILE( "RecentFiles"), //TODO(Custom Implementation)
+    GOTO_LAST_MODIFICATION( "JumpToLastChange"), //TODO (Custom)
+    GOTO_LINE( "GotoLine"),
+    GOTO_LAST_LINE( ""), //TODO Custom implement
+    GOTO_FIRST_DIAG( "GotoNextError"), //TODO(Custom Implementaion)
+    GOTO_LAST_DIAG( "GotoPreviousError"),
+    GOTO_NEXT_CHANGE( "JumpToNextChange"),
+    GOTO_FIRST_CHANGE( ""), //TODO Custom
+    GOTO_LAST_CHANGE( ""), // TODO Custom
+    GOTOLINE_START( "EditorLineStart"),
+    GOTO_LINE_END( "EditorLineEnd"),
+    GOTO_NEXT_BUFFER( "NextEditorTab"),
+    GOTO_PREVIOUS_BUFFER( "PreviousEditorTab"),
     GOTO_LINE_END_NEWLINE( ""),
     GOTO_FIRST_NONWHITESPACE( ""),
     TRIM_SELECTIONS( ""),
@@ -351,7 +352,7 @@ class CommandExecutor(val project: Project): Disposable {
 
     ROTATE_SELECTIONS_CONTENTS_FORWARD(""),
 
-    EXTEND_LINE_BELOW(""),
+
     EXTEND_TO_LINE_BOUNDS(""),
     SHRINK_TO_LINE_BOUNDS(""),
 

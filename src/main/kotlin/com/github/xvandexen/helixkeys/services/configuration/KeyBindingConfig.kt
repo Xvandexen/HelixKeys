@@ -40,6 +40,17 @@ object KeyBindingConfig {
       "home" to '\uE005'
     )
 
+  fun KeyCombo.toFormattedString(): String {
+    val (char, modifiers) = this
+    val prefix = StringBuilder()
+
+    if (modifiers.control) prefix.append("C-")
+    if (modifiers.meta) prefix.append("M-")
+    if (modifiers.alt) prefix.append("A-")
+
+    return prefix.toString() + char
+  }
+
   fun loadConfig(): MutableMap<ModeManager.Mode, Map<KeyCombo, RecKeyBinding>> {
     val mapper = tomlMapper {}
     val configFile = ConfigPaths("helixkeys_keybinding.toml", "helixkeys").getOsSpecificConfigPath().toFile()
